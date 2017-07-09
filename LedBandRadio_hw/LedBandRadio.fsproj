@@ -10,7 +10,7 @@
 	<Document>
 		<LocalLibrary />
 		<Pcb>
-			<File path=".\LedBandRadio.fsx" isopened="1"/>
+			<File path=".\LedBandRadio.fsx" isopened="0"/>
 		</Pcb>
 		<ARouteSessions>
 		</ARouteSessions>

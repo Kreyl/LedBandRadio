@@ -2,3 +2,5 @@ LedBandRadio_hw/.LedBandRadio.fsxview
 *.dsn
 *.kicad_pcb-bak
 *.ses
+LedBandRadio_hw/LedBandRadio.xml
+LedBandRadio_hw/LedBandRadio.csv
