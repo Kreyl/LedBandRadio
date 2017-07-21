@@ -101,7 +101,6 @@ enum RiseFall_t {rfRising, rfFalling, rfNone};
 enum Inverted_t {invNotInverted, invInverted};
 enum PinOutMode_t {omPushPull = 0, omOpenDrain = 1};
 enum BitNumber_t {bitn8, bitn16, bitn32};
-enum EnableDisable_t {Enable, Disable};
 
 typedef void (*ftVoidVoid)(void);
 typedef void (*ftVoidPVoid)(void*p);
@@ -241,7 +240,7 @@ static inline uint32_t GetUniqID3() {
 #if 1 // ======================= Virtual Timer =================================
 /*
  * Example:
- * TmrKL_t TmrCheckBtn {MS2ST(54), evtIdPauseEnds, tktPeriodic};
+ * TmrKL_t TmrCheckBtn {MS2ST(54), EVT_BUTTONS, tktPeriodic};
  * TmrCheckBtn.InitAndStart(chThdGetSelfX());
  */
 
@@ -1563,8 +1562,6 @@ public:
 
     void SetHiPerfMode();
     void SetLoPerfMode();
-
-    uint32_t GetSysClkHz();
 
     // Setup independent clock
     void SetI2CClkSrc(I2C_TypeDef *i2c, i2cClk_t ClkSrc) {

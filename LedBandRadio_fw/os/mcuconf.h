@@ -1,5 +1,5 @@
 /*
-    ChibiOS - Copyright (C) 2006..2015 Giovanni Di Sirio
+    ChibiOS - Copyright (C) 2006..2016 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,36 +14,44 @@
     limitations under the License.
 */
 
-#ifndef _MCUCONF_H_
-#define _MCUCONF_H_
+#ifndef MCUCONF_H
+#define MCUCONF_H
 
 /*
- * STM32F0xx drivers configuration.
+ * STM32L1xx drivers configuration.
  * The following settings override the default settings present in
  * the various device driver implementation headers.
  * Note that the settings for each driver only have effect if the whole
  * driver is enabled in halconf.h.
  *
  * IRQ priorities:
- * 3...0       Lowest...Highest.
+ * 15...0       Lowest...Highest.
  *
  * DMA priorities:
  * 0...3        Lowest...Highest.
  */
 
-#define STM32F0xx_MCUCONF
+#define STM32L1xx_MCUCONF
 
 /*
  * HAL driver system settings.
  */
 #define STM32_NO_INIT                       FALSE
 #define STM32_PVD_ENABLE                    FALSE
+#define STM32_PLS                           STM32_PLS_LEV0
 
 /*
  * ST driver system settings.
  */
-#define STM32_ST_IRQ_PRIORITY               2
-#define STM32_ST_USE_TIMER                  14
+#define STM32_ST_IRQ_PRIORITY               8
+#define STM32_ST_USE_TIMER                  2
 
+/*
+ * USB driver system settings.
+ */
+#define STM32_USB_USE_USB1                  FALSE
+#define STM32_USB_LOW_POWER_ON_SUSPEND      FALSE
+#define STM32_USB_USB1_HP_IRQ_PRIORITY      13
+#define STM32_USB_USB1_LP_IRQ_PRIORITY      14
 
-#endif /* _MCUCONF_H_ */
+#endif /* MCUCONF_H */

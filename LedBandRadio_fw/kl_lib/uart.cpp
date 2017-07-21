@@ -30,7 +30,7 @@
                             STM32_DMA_CR_CIRC         /* Circular buffer enable */
 
 // Pins Alternate function
-#if defined STM32L4XX || defined STM32F0XX
+#if defined STM32L4XX
 #define UART_TX_REG     TDR
 #define UART_RX_REG     RDR
 #elif defined STM32L1XX
@@ -52,7 +52,7 @@ static const UartParams_t UartParams = {
         UART_DMA_TX, UART_DMA_RX,
         UART_DMA_TX_MODE(UART_DMA_CHNL), UART_DMA_RX_MODE(UART_DMA_CHNL),
 #if defined STM32F072xB || defined STM32L4XX
-        UART_USE_INDEPENDENT_CLK
+        true    // Use independed clock
 #endif
 };
 
@@ -147,13 +147,10 @@ uint8_t BaseUart_t::GetByte(uint8_t *b) {
 
 #if 1 // ==== Init ====
 void BaseUart_t::Init(uint32_t ABaudrate) {
-    AlterFunc_t PinAF = AF0;
+    AlterFunc_t PinAF;
     // ==== Tx pin ====
 #if defined STM32L4XX || defined STM32L1XX
     PinAF = AF7; // for all USARTs
-#elif defined STM32F0XX
-    if(Params->PGpioTx == GPIOA) PinAF = AF1;
-    else if(Params->PGpioTx == GPIOB) PinAF = AF0;
 #else
 #error "UART AF not defined"
 #endif
@@ -207,9 +204,6 @@ void BaseUart_t::Init(uint32_t ABaudrate) {
     // ==== Rx pin ====
 #if defined STM32L4XX || defined STM32L1XX
     PinAF = AF7; // for all USARTs
-#elif defined STM32F0XX
-    if(Params->PGpioRx == GPIOA) PinAF = AF1;
-    else if(Params->PGpioRx == GPIOB) PinAF = AF0;
 #else
 #error "UART AF not defined"
 #endif
@@ -315,7 +309,7 @@ static const UartParams_t ByteUartParams = {
         FT_UART_DMA_TX, FT_UART_DMA_RX,
         UART_DMA_TX_MODE(FT_UART_DMA_CHNL), UART_DMA_RX_MODE(FT_UART_DMA_CHNL),
 #if defined STM32F072xB || defined STM32L4XX
-        false    // Use independed clock
+        true    // Use independed clock
 #endif
 };
 
@@ -339,8 +333,7 @@ void ByteUart_t::IRxTask() {
     uint8_t b;
     while(GetByte(&b) == retvOk) {
         if(Cmd.PutChar(b) == pdrNewCmd) {
-            EvtMsg_t Msg(evtIdByteCmd, (ByteShell_t*)this);
-            CmdProcessInProgress = (EvtQMain.SendNowOrExit(Msg) == retvOk);
+            CmdProcessInProgress = (MainEvtQ.SendNowOrExit({evtIdByteCmd, (ByteShell_t*)this}) == retvOk);
         }
     }
 }

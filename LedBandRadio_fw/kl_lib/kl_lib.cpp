@@ -364,8 +364,6 @@ uint8_t ErasePage(uint32_t PageAddress) {
         status = WaitForLastOperation(FLASH_EraseTimeout);
         FLASH->PECR &= ~FLASH_PECR_PROG;
         FLASH->PECR &= ~FLASH_PECR_ERASE;
-#elif defined STM32L4XX
-
 #else
         FLASH->CR |= 0x00000002; // XXX
         FLASH->AR = PageAddress;
@@ -700,7 +698,7 @@ void Vector54() {
     if(ExtiIrqHandler[1] != nullptr) ExtiIrqHandler[1]->IIrqHandler();
 #else
     if(ExtiIrqHandler_0_1 != nullptr) ExtiIrqHandler_0_1->IIrqHandler();
-    else PrintfC("Unhandled %S\r", __FUNCTION__);
+    else PrintfCNow("Unhandled %S\r", __FUNCTION__);
 #endif
     EXTI->PR = 0x0003;  // Clean IRQ flag
     chSysUnlockFromISR();
@@ -716,7 +714,7 @@ void Vector58() {
     if(ExtiIrqHandler[3] != nullptr) ExtiIrqHandler[3]->IIrqHandler();
 #else
     if(ExtiIrqHandler_2_3 != nullptr) ExtiIrqHandler_2_3->IIrqHandler();
-    else PrintfC("Unhandled %S\r", __FUNCTION__);
+    else PrintfCNow("Unhandled %S\r", __FUNCTION__);
 #endif
     EXTI->PR = 0x000C;  // Clean IRQ flag
     chSysUnlockFromISR();
@@ -733,7 +731,7 @@ void Vector5C() {
     }
 #else
     if(ExtiIrqHandler_4_15 != nullptr) ExtiIrqHandler_4_15->IIrqHandler();
-    else PrintfC("Unhandled %S\r", __FUNCTION__);
+    else PrintfCNow("Unhandled %S\r", __FUNCTION__);
 #endif
     EXTI->PR = 0xFFF0;  // Clean IRQ flag
     chSysUnlockFromISR();
@@ -1231,7 +1229,7 @@ void Clk_t::SetupFlashLatency(uint32_t FrequencyHz) {
 }
 
 void Clk_t::PrintFreqs() {
-    Printf(
+    Uart.Printf(
             "AHBFreq=%uMHz; APBFreq=%uMHz\r",
             Clk.AHBFreqHz/1000000, Clk.APBFreqHz/1000000);
 }
@@ -1561,18 +1559,29 @@ const uint32_t MSIRangeTable[12] = {
         100000, 200000, 400000, 800000, 1000000, 2000000,
         4000000, 8000000, 16000000, 24000000, 32000000, 48000000};
 
-uint32_t Clk_t::GetSysClkHz() {
+void Clk_t::UpdateFreqValues() {
     uint32_t tmp, MSIRange;
     // ==== Get MSI Range frequency ====
     if((RCC->CR & RCC_CR_MSIRGSEL) == 0) tmp = (RCC->CSR & RCC_CSR_MSISRANGE) >> 8;  // MSISRANGE from RCC_CSR applies
     else tmp = (RCC->CR & RCC_CR_MSIRANGE) >> 4;    // MSIRANGE from RCC_CR applies
     MSIRange = MSIRangeTable[tmp];                  // MSI frequency range in Hz
 
+    // ==== Figure out SysClk ====
+    uint32_t SysClkHz;// = HSI_FREQ_HZ;
     tmp = (RCC->CFGR & RCC_CFGR_SWS) >> 2;  // System clock switch status
     switch(tmp) {
-        case 0b00: return MSIRange; break; // MSI
-        case 0b01: return HSI_FREQ_HZ; break; // HSI
-        case 0b10: return CRYSTAL_FREQ_HZ; break;// HSE
+        case 0b00: // MSI
+            SysClkHz = MSIRange;
+            break;
+
+        case 0b01: // HSI
+            SysClkHz = HSI_FREQ_HZ;
+            break;
+
+        case 0b10: // HSE
+            SysClkHz = CRYSTAL_FREQ_HZ;
+            break;
+
         case 0b11: {
             uint32_t PllSrc, PllM, PllR, PllVCO;
             /* PLL used as system clock source
@@ -1593,17 +1602,13 @@ uint32_t Clk_t::GetSysClkHz() {
             } // switch(PllSrc)
             PllVCO *= ((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> 8);
             PllR = (((RCC->PLLCFGR & RCC_PLLCFGR_PLLR) >> 25) + 1) * 2;
-            return PllVCO / PllR;
+            SysClkHz = PllVCO / PllR;
         } break;
-        default: return 0; break;
     } // switch
-}
 
-    uint32_t tmp;
-void Clk_t::UpdateFreqValues() {
     // AHB freq
     tmp = AHBPrescTable[((RCC->CFGR & RCC_CFGR_HPRE) >> 4)];
-    AHBFreqHz = GetSysClkHz() >> tmp;
+    AHBFreqHz = SysClkHz >> tmp;
     // APB freq
     uint32_t APB1prs = (RCC->CFGR & RCC_CFGR_PPRE1) >> 8;
     uint32_t APB2prs = (RCC->CFGR & RCC_CFGR_PPRE2) >> 11;
@@ -1669,13 +1674,11 @@ void Clk_t::SetHiPerfMode() {
     if(EnableHSE() == retvOk) {
         // Setup PLL (must be disabled first)
 //        if(SetupPllMulDiv(1, 24, 4, 6) == retvOk) { // 12MHz / 1 * 24 => 72 and 48MHz
-//        if(SetupPllMulDiv(2, 16, 2, 2) == retvOk) { // 12MHz / 2 * 16 / 2 => 48 and 48MHz
-        if(SetupPllMulDiv(2, 16, 4, 2) == retvOk) { // 12MHz / 2 * 16 / [2, 4] => 24 and 48MHz
+        if(SetupPllMulDiv(2, 16, 2, 2) == retvOk) { // 12MHz / 1 * 8 / 2 => 48 and 48MHz
             SetupBusDividers(ahbDiv1, apbDiv1, apbDiv1);
             SetVoltageRange(mvrHiPerf);
 //            SetupFlashLatency(72, mvrHiPerf);
-//            SetupFlashLatency(48, mvrHiPerf);
-            SetupFlashLatency(24, mvrHiPerf);
+            SetupFlashLatency(48, mvrHiPerf);
             EnablePrefeth();
             // Switch clock
             if(EnablePLL() == retvOk) {
