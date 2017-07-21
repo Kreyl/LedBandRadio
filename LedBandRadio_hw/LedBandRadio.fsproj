@@ -5,7 +5,7 @@
 <!--   Version : 2                         -->
 <!--   Program : TopoR Lite 6.3.17658 Beta -->
 <!--   Date    : Monday, July 10, 2017     -->
-<!--   Time    : 12:42                     -->
+<!--   Time    : 20:38                     -->
 <!--***************************************-->
 
 <Project>
@@ -13,7 +13,7 @@
    <GUID>{B34086E9-21FE-45A0-85C3-C0384D39FF59}</GUID>
    <Documents>
       <Section name="PCB">
-         <File path=".\LedBandRadio.fsx" isopened="1" dateChange="2017-07-09 22:19:39"/>
+         <File path=".\LedBandRadio.fsx" isopened="0" dateChange="2017-07-10 12:20:51"/>
       </Section>
       <Section name="AutoRouting"/>
    </Documents>

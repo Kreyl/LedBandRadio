@@ -4,3 +4,5 @@ LedBandRadio_hw/.LedBandRadio.fsxview
 *.ses
 LedBandRadio_hw/LedBandRadio.xml
 LedBandRadio_hw/LedBandRadio.csv
+*.xml
+LedBandRadio_hw/_saved_LedBandRadio.sch
