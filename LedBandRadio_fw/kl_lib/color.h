@@ -105,6 +105,7 @@ struct Color_t {
         R = ClrMix(Fore.R, Back.R, Brt);
         G = ClrMix(Fore.G, Back.G, Brt);
         B = ClrMix(Fore.B, Back.B, Brt);
+        W = ClrMix(Fore.W, Back.W, Brt);
     }
     uint32_t DelayToNextAdj(const Color_t &AClr, uint32_t SmoothValue) {
         uint32_t Delay, Delay2;

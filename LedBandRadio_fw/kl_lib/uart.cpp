@@ -30,7 +30,7 @@
                             STM32_DMA_CR_CIRC         /* Circular buffer enable */
 
 // Pins Alternate function
-#if defined STM32L4XX
+#if defined STM32L4XX || defined STM32F0XX
 #define UART_TX_REG     TDR
 #define UART_RX_REG     RDR
 #elif defined STM32L1XX
@@ -52,7 +52,7 @@ static const UartParams_t UartParams = {
         UART_DMA_TX, UART_DMA_RX,
         UART_DMA_TX_MODE(UART_DMA_CHNL), UART_DMA_RX_MODE(UART_DMA_CHNL),
 #if defined STM32F072xB || defined STM32L4XX
-        true    // Use independed clock
+        UART_USE_INDEPENDENT_CLK
 #endif
 };
 
@@ -151,6 +151,9 @@ void BaseUart_t::Init(uint32_t ABaudrate) {
     // ==== Tx pin ====
 #if defined STM32L4XX || defined STM32L1XX
     PinAF = AF7; // for all USARTs
+#elif defined STM32F0XX
+    if(Params->PGpioTx == GPIOA) PinAF = AF1;
+    else if(Params->PGpioTx == GPIOB) PinAF = AF0;
 #else
 #error "UART AF not defined"
 #endif
@@ -204,6 +207,9 @@ void BaseUart_t::Init(uint32_t ABaudrate) {
     // ==== Rx pin ====
 #if defined STM32L4XX || defined STM32L1XX
     PinAF = AF7; // for all USARTs
+#elif defined STM32F0XX
+    if(Params->PGpioRx == GPIOA) PinAF = AF1;
+    else if(Params->PGpioRx == GPIOB) PinAF = AF0;
 #else
 #error "UART AF not defined"
 #endif
@@ -309,7 +315,7 @@ static const UartParams_t ByteUartParams = {
         FT_UART_DMA_TX, FT_UART_DMA_RX,
         UART_DMA_TX_MODE(FT_UART_DMA_CHNL), UART_DMA_RX_MODE(FT_UART_DMA_CHNL),
 #if defined STM32F072xB || defined STM32L4XX
-        true    // Use independed clock
+        false    // Use independed clock
 #endif
 };
 
@@ -333,7 +339,8 @@ void ByteUart_t::IRxTask() {
     uint8_t b;
     while(GetByte(&b) == retvOk) {
         if(Cmd.PutChar(b) == pdrNewCmd) {
-            CmdProcessInProgress = (MainEvtQ.SendNowOrExit({evtIdByteCmd, (ByteShell_t*)this}) == retvOk);
+            EvtMsg_t Msg(evtIdByteCmd, (ByteShell_t*)this);
+            CmdProcessInProgress = (EvtQMain.SendNowOrExit(Msg) == retvOk);
         }
     }
 }

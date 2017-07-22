@@ -48,6 +48,7 @@
 
 #if 1 // ========================== USART ======================================
 #define CMD_UART        USART2
+#define UART_TXBUF_SZ   1024
 #endif
 
 #if ADC_REQUIRED // ======================= Inner ADC ==========================

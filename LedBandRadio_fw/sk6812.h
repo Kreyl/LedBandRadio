@@ -79,16 +79,14 @@ public:
 enum EffState_t {effEnd, effInProgress};
 
 class EffBase_t {
-protected:
 public:
     virtual EffState_t Process() = 0;
 };
 
 class EffAllTogetherNow_t : public EffBase_t {
-private:
 public:
     void SetupAndStart(Color_t Color);
-    EffState_t Process() { return effEnd; }
+    EffState_t Process() { return effEnd; } // Dummy, never used
 };
 
 class EffAllTogetherSmoothly_t : public EffBase_t {
@@ -99,9 +97,22 @@ public:
     EffState_t Process();
 };
 
+class EffFadeOneByOne_t : public EffBase_t {
+private:
+    uint32_t ISmoothValue;
+    uint8_t IDs[LED_CNT];
+    Color_t IClrLo, IClrHi;
+public:
+    EffState_t Process();
+    void SetThresholds(int32_t ThrLo, int32_t ThrHi);
+    void SetupIDs();
+    EffFadeOneByOne_t(uint32_t ASmoothValue, Color_t AClrLo, Color_t AClrHi) :
+        ISmoothValue(ASmoothValue), IClrLo(AClrLo), IClrHi(AClrHi) {}
+};
+
 extern EffAllTogetherNow_t EffAllTogetherNow;
 extern EffAllTogetherSmoothly_t EffAllTogetherSmoothly;
-
+extern EffFadeOneByOne_t EffFadeOneByOne;
 
 void LedEffectsInit();
 

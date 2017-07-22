@@ -65,6 +65,8 @@ int main(void) {
     LedWsEn.SetLo();
     LedEffectsInit();
 
+    EffFadeOneByOne.SetupIDs();
+
     // Main cycle
     ITask();
 }
@@ -107,6 +109,14 @@ void OnCmd(Shell_t *PShell) {
         if(PCmd->GetNext<uint8_t>(&FClr.W) != retvOk) return;
 //        EffAllTogetherNow.SetupAndStart(FClr);
         EffAllTogetherSmoothly.SetupAndStart(FClr, 360);
+        PShell->Ack(retvOk);
+    }
+
+    else if(PCmd->NameIs("Fade")) {
+        int32_t FThrLo=0, FThrHi=0;
+        if(PCmd->GetNext<int32_t>(&FThrLo) != retvOk) return;
+        if(PCmd->GetNext<int32_t>(&FThrHi) != retvOk) return;
+        EffFadeOneByOne.SetThresholds(FThrLo, FThrHi);
         PShell->Ack(retvOk);
     }
 
