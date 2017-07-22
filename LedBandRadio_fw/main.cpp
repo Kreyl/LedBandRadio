@@ -47,8 +47,6 @@ int main(void) {
     Printf("\r%S %S\r", APP_NAME, BUILD_TIME);
     Clk.PrintFreqs();
 
-    Printf("%u %u %u\r", sizeof(thread_t), sizeof(struct port_intctx), sizeof(struct port_extctx));
-
     // Debug LED
     Led.Init();
     Led.On();
@@ -65,7 +63,7 @@ int main(void) {
     // LEDs
     LedWsEn.Init();
     LedWsEn.SetLo();
-    Effects.Init();
+    LedEffectsInit();
 
     // Main cycle
     ITask();
@@ -107,7 +105,8 @@ void OnCmd(Shell_t *PShell) {
         if(PCmd->GetNext<uint8_t>(&FClr.G) != retvOk) return;
         if(PCmd->GetNext<uint8_t>(&FClr.B) != retvOk) return;
         if(PCmd->GetNext<uint8_t>(&FClr.W) != retvOk) return;
-        Effects.AllTogetherSmoothly(FClr, 360);
+//        EffAllTogetherNow.SetupAndStart(FClr);
+        EffAllTogetherSmoothly.SetupAndStart(FClr, 360);
         PShell->Ack(retvOk);
     }
 

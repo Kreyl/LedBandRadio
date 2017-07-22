@@ -53,9 +53,7 @@ public:
 
 extern LedSk_t Leds;
 
-#if 1 // ============================== Effects ================================
-enum EffState_t {effIdle, effAllSmoothly};
-
+#if 1 // =============================== Chunk =================================
 class LedChunk_t {
 private:
     int Head, Tail;
@@ -75,26 +73,36 @@ public:
     uint32_t ProcessAndGetDelay();
     void StartOver();
 };
+#endif
 
-class Effects_t {
-private:
-    thread_t *PThd;
-    EffState_t IState;
-    uint32_t SmoothValue[LED_CNT];
-    void IProcessChunkRandom();
+#if 1 // ============================== Effects ================================
+enum EffState_t {effEnd, effInProgress};
+
+class EffBase_t {
+protected:
 public:
-    void Init();
-    // Effects
-    void AllTogetherNow(Color_t Color);
-    void AllTogetherNow(ColorHSV_t Color);
-    void AllTogetherSmoothly(Color_t Color, uint32_t ASmoothValue);
-//    void AllTogetherSmoothly(ColorHSV_t Color, uint32_t ASmoothValue);
-    void ChunkRunningRandom(Color_t Color, uint32_t NLeds, uint32_t ASmoothValue);
-    // Inner use
-    uint32_t ICalcDelayN(uint32_t n);
-    Color_t DesiredClr[LED_CNT];
-    void ITask();
+    virtual EffState_t Process() = 0;
 };
 
-extern Effects_t Effects;
+class EffAllTogetherNow_t : public EffBase_t {
+private:
+public:
+    void SetupAndStart(Color_t Color);
+    EffState_t Process() { return effEnd; }
+};
+
+class EffAllTogetherSmoothly_t : public EffBase_t {
+private:
+    uint32_t ISmoothValue;
+public:
+    void SetupAndStart(Color_t Color, uint32_t ASmoothValue);
+    EffState_t Process();
+};
+
+extern EffAllTogetherNow_t EffAllTogetherNow;
+extern EffAllTogetherSmoothly_t EffAllTogetherSmoothly;
+
+
+void LedEffectsInit();
+
 #endif
