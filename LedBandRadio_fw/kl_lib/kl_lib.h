@@ -175,6 +175,10 @@ static T FindMediana(T *Arr, int32_t N) {
     return Arr[k];
 }
 
+// Amount of memory occupied by thread
+uint32_t GetThdFreeStack(void *wsp, uint32_t size);
+void PrintThdFreeStack(void *wsp, uint32_t size);
+
 /*
  * Early initialization code.
  * This initialization must be performed just after stack setup and before

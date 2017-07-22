@@ -15,6 +15,35 @@
 //extern "C" void __cxa_pure_virtual() {
 //    Uart.PrintfNow("pure_virtual\r");
 //}
+
+// Amount of memory occupied by thread
+uint32_t GetThdFreeStack(void *wsp, uint32_t size) {
+    uint32_t n = 0;
+    uint32_t RequestedSize = size - (sizeof(thread_t) +
+            (size_t)PORT_GUARD_PAGE_SIZE +
+            sizeof (struct port_intctx) +
+            sizeof (struct port_extctx) +
+            (size_t)PORT_INT_REQUIRED_STACK);
+#if CH_DBG_FILL_THREADS
+    uint8_t *startp = (uint8_t *)wsp;
+    uint8_t *endp = (uint8_t *)wsp + RequestedSize;
+    while (startp < endp)
+        if(*startp++ == CH_DBG_STACK_FILL_VALUE) ++n;
+#endif
+    return n;
+}
+
+void PrintThdFreeStack(void *wsp, uint32_t size) {
+    uint32_t RequestedSize = size - (sizeof(thread_t) +
+            (size_t)PORT_GUARD_PAGE_SIZE +
+            sizeof (struct port_intctx) +
+            sizeof (struct port_extctx) +
+            (size_t)PORT_INT_REQUIRED_STACK);
+
+    Printf("Free stack memory: %u of %u bytes\r",
+            GetThdFreeStack(wsp, size), RequestedSize);
+}
+
 #endif
 
 #if 1 // ============================= Timer ===================================

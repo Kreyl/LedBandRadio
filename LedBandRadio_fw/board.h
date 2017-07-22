@@ -31,53 +31,19 @@
 #if 1 // ========================== GPIO =======================================
 // PortMinTim_t: GPIO, Pin, Tim, TimChnl, invInverted, omPushPull, TopValue
 
-// Buttons
-#define BTN1_PIN        GPIOB, 11, pudPullDown
-#define BTN2_PIN        GPIOA, 8, pudPullDown
-#define BTN3_PIN        GPIOA, 0, pudPullDown
-// Charge input
-#define CHARGE_PIN      GPIOB, 8, pudPullUp
-
-// Peripheral power enable
-#define PWR_EN_PIN      GPIOB, 9, omPushPull
-// Usb-based kbrd power
-#define PWR_KBRD_PIN    GPIOA, 15, omPushPull
-// Measurement enable pin
-#define MEASURE_EN_PIN  GPIOB, 10, omPushPull
-
-// Battery measurement
-#define ADC_BATT_PIN    GPIOA, 1
-#define ADC_KBRD_PIN    GPIOA, 2
-
 // UART
 #define UART_GPIO       GPIOA
 #define UART_TX_PIN     2
 #define UART_RX_PIN     3
 
-// Vibro
-#define VIBRO_SETUP     { GPIOB, 12, TIM10, 1, invNotInverted, omPushPull, 255 }
-
 // LEDs
-#define LED_RED_CH      { GPIOB, 1, TIM3, 4, invNotInverted, omPushPull, 255 }
-#define LED_GREEN_CH    { GPIOB, 5, TIM3, 2, invNotInverted, omPushPull, 255 }
-#define LED_BLUE_CH     { GPIOB, 0, TIM3, 3, invNotInverted, omPushPull, 255 }
-
-#define LED1_SETUP      { GPIOB, 13, TIM9, 1, invNotInverted, omPushPull, 255 }
-#define LED2_SETUP      { GPIOB, 14, TIM9, 2, invNotInverted, omPushPull, 255 }
-#define LED3_SETUP      { GPIOB, 15, TIM11, 1, invNotInverted, omPushPull, 255 }
-
-// Accelerometer
-#define ACC1_INT_PIN    GPIOB, 2
-#define ACC2_INT_PIN    GPIOB, 4
-
-// I2C
-#define I2C1_GPIO       GPIOB
-#define I2C1_SCL        6
-#define I2C1_SDA        7
-#define I2C1_BAUDRATE   400000
+#define LED_PIN         GPIOB, 4, omPushPull
+#define LEDWS_PIN       GPIOB, 15, omPushPull, pudNone, AF5, psHigh
+#define LED_WS_EN       GPIOB, 14, omPushPull
+#define LEDWS_SPI       SPI2
 
 // Radio: SPI, PGpio, Sck, Miso, Mosi, Cs, Gdo0
-#define CC_Setup0       SPI1, GPIOA, 5,6,7, 4, 3
+#define CC_Setup0       SPI1, GPIOA, 5,6,7, 4, 1
 #endif // GPIO
 
 #if 1 // ========================== USART ======================================
@@ -111,6 +77,8 @@
 #define UART_DMA_TX     STM32_DMA1_STREAM7
 #define UART_DMA_RX     STM32_DMA1_STREAM6
 #define UART_DMA_CHNL   0   // Dummy
+
+#define LEDWS_DMA       STM32_DMA1_STREAM5  // SPI2 TX
 
 // ==== I2C1 ====
 #define I2C1_DMA_TX     STM32_DMA1_STREAM6
