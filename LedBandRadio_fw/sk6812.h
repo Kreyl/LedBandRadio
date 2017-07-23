@@ -90,24 +90,22 @@ public:
 };
 
 class EffAllTogetherSmoothly_t : public EffBase_t {
-private:
+protected:
     uint32_t ISmoothValue;
 public:
     void SetupAndStart(Color_t Color, uint32_t ASmoothValue);
     EffState_t Process();
 };
 
-class EffFadeOneByOne_t : public EffBase_t {
+class EffFadeOneByOne_t : public EffAllTogetherSmoothly_t {
 private:
-    uint32_t ISmoothValue;
     uint8_t IDs[LED_CNT];
     Color_t IClrLo, IClrHi;
 public:
-    EffState_t Process();
-    void SetThresholds(int32_t ThrLo, int32_t ThrHi);
+    void SetupAndStart(int32_t ThrLo, int32_t ThrHi);
     void SetupIDs();
     EffFadeOneByOne_t(uint32_t ASmoothValue, Color_t AClrLo, Color_t AClrHi) :
-        ISmoothValue(ASmoothValue), IClrLo(AClrLo), IClrHi(AClrHi) {}
+        IClrLo(AClrLo), IClrHi(AClrHi) { ISmoothValue = ASmoothValue; }
 };
 
 extern EffAllTogetherNow_t EffAllTogetherNow;

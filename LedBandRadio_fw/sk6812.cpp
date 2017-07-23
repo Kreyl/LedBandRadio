@@ -48,6 +48,8 @@ void LedSk_t::Init() {
 
     // Zero buffer
     for(int i=0; i<TOTAL_W_CNT; i++) IBuf[i] = 0;
+    // Set colors to black
+    for(uint32_t i=0; i<LED_CNT; i++) ICurrentClr[i] = clRGBWBlack;
 
     // ==== DMA ====
     dmaStreamAllocate     (LEDWS_DMA, IRQ_PRIO_LOW, LedTxcIrq, NULL);
@@ -179,7 +181,7 @@ void EffFadeOneByOne_t::SetupIDs() {
     for(int i=0; i<LED_CNT; i++) IDs[i] = i;
 }
 
-void EffFadeOneByOne_t::SetThresholds(int32_t ThrLo, int32_t ThrHi) {
+void EffFadeOneByOne_t::SetupAndStart(int32_t ThrLo, int32_t ThrHi) {
     Printf("ThrLo: %d; ThrHi: %d\r", ThrLo, ThrHi);
     // Setup ColorLo
     for(int32_t i=0; i < ThrLo; i++) DesiredClr[i] = IClrLo;
@@ -194,15 +196,16 @@ void EffFadeOneByOne_t::SetThresholds(int32_t ThrLo, int32_t ThrHi) {
             if(Indx >=0 and Indx < LED_CNT) {
                 int32_t Brt = (i * BrtStep) / 1024;
                 Printf("%d Brt: %d\r", Indx, Brt);
+                DesiredClr[Indx].BeMixOf(IClrLo, IClrHi, Brt);
             }
         }
-    }
+    } // if(ThrHi > ThrLo)
+    // Start processing
+    chSysLock();
+    PCurrentEff = this;
+    chThdResumeS(&PThd, MSG_OK);
+    chSysUnlock();
 }
-
-EffState_t EffFadeOneByOne_t::Process() {
-    return effEnd;
-}
-
 
 #if 1 // ============================ All together =============================
 #endif
