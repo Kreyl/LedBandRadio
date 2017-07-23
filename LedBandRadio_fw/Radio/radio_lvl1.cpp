@@ -41,12 +41,11 @@ static void rLvl1Thread(void *arg) {
 __noreturn
 void rLevel1_t::ITask() {
     while(true) {
-//        uint8_t RxRslt = CC.Receive(180, &Pkt, &Rssi);
-//        if(RxRslt == retvOk) {
-////            Led1.StartOrContinue(lsqSmoothBlink);
-//            Printf("Rx %u; Rssi=%d\r", Pkt.Percent, Rssi);
-//        } // if RxRslt ok
-        CC.Transmit(&Pkt);
+        uint8_t RxRslt = CC.Receive(999, &Pkt, &Rssi);
+        if(RxRslt == retvOk) {
+            Printf("Rx %u; Rssi=%d\r", Pkt.Percent, Rssi);
+        } // if RxRslt ok
+//        CC.Transmit(&Pkt);
         chThdSleepMilliseconds(11);
     } // while
 }
