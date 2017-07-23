@@ -57,14 +57,13 @@ static inline void Lvl250ToLvl1000(uint16_t *PLvl) {
 
 #if 1 // =========================== Pkt_t =====================================
 union rPkt_t  {
-    uint32_t DWord;
-    rPkt_t& operator = (const rPkt_t &Right) {
-        DWord = Right.DWord;
-        return *this;
-    }
+    uint8_t Percent;
+    uint32_t TestWord;
 } __packed;
 
 #define RPKT_LEN    sizeof(rPkt_t)
+
+#define TEST_WORD   0xCa115ea1  // Call Seal
 #endif
 
 // ==== Sizes ====
