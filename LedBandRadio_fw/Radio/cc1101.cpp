@@ -159,7 +159,6 @@ uint8_t cc1101_t::Receive(uint32_t Timeout_ms, void *Ptr, int8_t *PRssi) {
         return retvTimeout;
     }
     else return ReadFIFO(Ptr, PRssi);
-    return retvOk;
 }
 
 // Return RSSI in dBm
@@ -228,7 +227,7 @@ uint8_t cc1101_t::ReadFIFO(void *Ptr, int8_t *PRssi) {
     uint8_t b, *p = (uint8_t*)Ptr;
      // Check if received successfully
      if(ReadRegister(CC_PKTSTATUS, &b) != retvOk) return retvFail;
-     //    Uart.Printf("St: %X  ", b);
+//     Printf("St: %X  \r", b);
      if(b & 0x80) {  // CRC OK
          // Read FIFO
          CsLo();                // Start transmission

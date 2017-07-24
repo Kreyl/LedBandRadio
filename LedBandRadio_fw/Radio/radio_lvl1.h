@@ -56,7 +56,7 @@ static inline void Lvl250ToLvl1000(uint16_t *PLvl) {
 #define CC_TX_PWR   CC_PwrPlus5dBm
 
 #if 1 // =========================== Pkt_t =====================================
-union rPkt_t  {
+struct rPkt_t  {
     uint8_t Percent;
     uint32_t TestWord;
 } __packed;

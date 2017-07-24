@@ -9,6 +9,7 @@
 #include "cc1101.h"
 #include "MsgQ.h"
 #include "shell.h"
+#include "board.h"
 
 cc1101_t CC(CC_Setup0);
 
@@ -42,11 +43,17 @@ __noreturn
 void rLevel1_t::ITask() {
     while(true) {
         uint8_t RxRslt = CC.Receive(999, &Pkt, &Rssi);
-        if(RxRslt == retvOk) {
-            Printf("Rx %u; Rssi=%d\r", Pkt.Percent, Rssi);
+        if(RxRslt == retvOk and Pkt.TestWord == TEST_WORD) {
+//            Printf("Rx %u %X; Rssi=%d\r", Pkt.Percent, Pkt.TestWord, Rssi);
+            // Reply immediately
+            CC.Transmit(&Pkt);
+            // Send message to main thd
+            EvtMsg_t Msg(evtIdRadioCmd, Pkt.Percent);
+            EvtQMain.SendNowOrExit(Msg);
+
         } // if RxRslt ok
 //        CC.Transmit(&Pkt);
-        chThdSleepMilliseconds(11);
+//        chThdSleepMilliseconds(11);
     } // while
 }
 #endif // task
