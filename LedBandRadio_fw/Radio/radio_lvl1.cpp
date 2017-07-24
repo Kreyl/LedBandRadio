@@ -45,14 +45,13 @@ void rLevel1_t::ITask() {
         uint8_t RxRslt = CC.Receive(999, &Pkt, &Rssi);
         if(RxRslt == retvOk and Pkt.TestWord == TEST_WORD) {
 //            Printf("Rx %u %X; Rssi=%d\r", Pkt.Percent, Pkt.TestWord, Rssi);
-            // Reply immediately
-            CC.Transmit(&Pkt);
             // Send message to main thd
             EvtMsg_t Msg(evtIdRadioCmd, Pkt.Percent);
             EvtQMain.SendNowOrExit(Msg);
-
+            // Report reception
+            CC.Recalibrate();
+            CC.Transmit(&Pkt);
         } // if RxRslt ok
-//        CC.Transmit(&Pkt);
 //        chThdSleepMilliseconds(11);
     } // while
 }

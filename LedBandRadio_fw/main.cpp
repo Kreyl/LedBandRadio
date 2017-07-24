@@ -77,6 +77,9 @@ void ITask() {
         EvtMsg_t Msg = EvtQMain.Fetch(TIME_INFINITE);
 //        Printf("Msg %u\r", Msg.ID);
         switch(Msg.ID) {
+            case evtIdRadioCmd:
+                Printf("New percent: %d\r", Msg.Value);
+                break;
 
 #if UART_RX_ENABLED
             case evtIdShellCmd:
