@@ -50,8 +50,8 @@ int main(void) {
     Clk.PrintFreqs();
 
     // Debug LED
-    Led.Init();
-    Led.On();
+//    Led.Init();
+//    Led.On();
 
     if(Radio.Init() != retvOk) {
         for(int i=0; i<4; i++) {
@@ -86,6 +86,7 @@ void ITask() {
         switch(Msg.ID) {
             case evtIdRadioCmd:
                 Printf("New percent: %d\r", Msg.Value);
+                PercentToFade(Msg.Value);
                 break;
 
 #if UART_RX_ENABLED
