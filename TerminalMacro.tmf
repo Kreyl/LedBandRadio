@@ -1,0 +1,49 @@
+# Terminal macro file v2
+Ping
+Ping#010#013
+R
+RGBW 255 0 0 0#010#013
+G
+RGBW 0 255 0 0#010#013
+B
+RGBW 0 0 255 0#010#013
+W
+RGBW 0 0 0 255#010#013
+DG
+RGBW 0 2 0 0#010#013
+
+Set 2 0#010#013
+
+Set 3 0#010#013
+
+
+
+q#010#013
+
+w#010#013
+
+e#010#013
+CalG
+CalG#010#013
+CalA 1
+CalA1#010#013
+CalA 2
+CalA2#010#013
+CalA 3
+CalA3#010#013
+CalA 4
+CalA4#010#013
+CalA 5
+CalA5#010#013
+CalA 6
+CalA6#010#013
+
+SetA 1 -1000#010#013
+
+
+
+
+
+
+
+

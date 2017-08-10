@@ -66,6 +66,11 @@ int main(void) {
     LedEffectsInit();
 
     EffFadeOneByOne.SetupIDs();
+//    EffAllTogetherSmoothly.SetupAndStart((Color_t){0,255,0,0}, 360);
+//    EffAllTogetherNow.SetupAndStart((Color_t){255,0,0,0});
+    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0,0});
+//    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255,0});
+//    EffAllTogetherNow.SetupAndStart((Color_t){0,0,0,255});
 
     // Main cycle
     ITask();

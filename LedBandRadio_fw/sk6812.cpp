@@ -47,7 +47,7 @@ void LedSk_t::Init() {
     ISpi.EnableTxDma();
 
     // Zero buffer
-    for(int i=0; i<TOTAL_W_CNT; i++) IBuf[i] = 0;
+    for(uint32_t i=0; i<TOTAL_W_CNT; i++) IBuf[i] = 0;
     // Set colors to black
     for(uint32_t i=0; i<LED_CNT; i++) ICurrentClr[i] = clRGBWBlack;
 
@@ -154,7 +154,7 @@ void EffAllTogetherSmoothly_t::SetupAndStart(Color_t Color, uint32_t ASmoothValu
     else {
         chSysLock();
         ISmoothValue = ASmoothValue;
-        for(uint32_t i=0; i<LED_CNT; i++) DesiredClr[i] = Color;
+        for(int32_t i=0; i<LED_CNT; i++) DesiredClr[i] = Color;
         PCurrentEff = this;
         chThdResumeS(&PThd, MSG_OK);
         chSysUnlock();
@@ -163,7 +163,7 @@ void EffAllTogetherSmoothly_t::SetupAndStart(Color_t Color, uint32_t ASmoothValu
 
 EffState_t EffAllTogetherSmoothly_t::Process() {
     uint32_t Delay = 0;
-    for(uint8_t i=0; i<LED_CNT; i++) {
+    for(int32_t i=0; i<LED_CNT; i++) {
         uint32_t tmp = ICalcDelayN(i, ISmoothValue);  // }
         if(tmp > Delay) Delay = tmp;                  // } Calculate Delay
         Leds.ICurrentClr[i].Adjust(DesiredClr[i]);    // Adjust current color
@@ -178,7 +178,7 @@ EffState_t EffAllTogetherSmoothly_t::Process() {
 
 
 void EffFadeOneByOne_t::SetupIDs() {
-    for(int i=0; i<LED_CNT; i++) IDs[i] = i;
+    for(uint32_t i=0; i<LED_CNT; i++) IDs[i] = i;
 }
 
 void EffFadeOneByOne_t::SetupAndStart(int32_t ThrLo, int32_t ThrHi) {
