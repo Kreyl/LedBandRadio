@@ -278,4 +278,6 @@ struct ColorHSV_t {
 #define clRGBWMagenta   ((Color_t){255, 0, 255,   0})
 #define clRGBWCyan      ((Color_t){0, 255, 255,   0})
 #define clRGBWWhite     ((Color_t){0,   0,   0, 255})
+
+#define clRGBWStars     ((Color_t){0,  15,  63,  18})
 #endif

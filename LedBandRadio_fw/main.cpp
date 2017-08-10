@@ -20,6 +20,8 @@ extern CmdUart_t Uart;
 static void ITask();
 static void OnCmd(Shell_t *PShell);
 
+static void PercentToFade(int32_t Percent);
+
 LedOnOff_t Led {LED_PIN};
 PinOutput_t LedWsEn {LED_WS_EN};
 Color_t Clr(0, 255, 0, 0);
@@ -66,9 +68,9 @@ int main(void) {
     LedEffectsInit();
 
     EffFadeOneByOne.SetupIDs();
-//    EffAllTogetherSmoothly.SetupAndStart((Color_t){0,255,0,0}, 360);
+    EffAllTogetherSmoothly.SetupAndStart(clRGBWStars, 360);
 //    EffAllTogetherNow.SetupAndStart((Color_t){255,0,0,0});
-    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0,0});
+//    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,0,0,255});
 
@@ -96,6 +98,21 @@ void ITask() {
         } // Switch
     } // while true
 } // App_t::ITask()
+
+void PercentToFade(int32_t Percent) {
+    int32_t FThrLo=0, FThrHi=0;
+    if(Percent > 100 or Percent < 0) return;
+    if(Percent >= 70) {
+        FThrLo = Proportion<int32_t>(70, 100, 0, 359, Percent);
+        FThrHi = LED_CNT;
+    }
+    else {
+        FThrLo = 0;
+        FThrHi = Proportion<int32_t>(0, 70, 1, 359, Percent);
+    }
+    Printf("Prc: %d; Lo: %d; Hi: %d\r", Percent, FThrLo, FThrHi);
+    EffFadeOneByOne.SetupAndStart(FThrLo, FThrHi);
+}
 
 
 #if UART_RX_ENABLED // ================= Command processing ====================
@@ -125,6 +142,13 @@ void OnCmd(Shell_t *PShell) {
         if(PCmd->GetNext<int32_t>(&FThrLo) != retvOk) return;
         if(PCmd->GetNext<int32_t>(&FThrHi) != retvOk) return;
         EffFadeOneByOne.SetupAndStart(FThrLo, FThrHi);
+        PShell->Ack(retvOk);
+    }
+
+    else if(PCmd->NameIs("Prc")) {
+        int32_t Percent = 0;
+        if(PCmd->GetNext<int32_t>(&Percent) != retvOk) return;
+        PercentToFade(Percent);
         PShell->Ack(retvOk);
     }
 

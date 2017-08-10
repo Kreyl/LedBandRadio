@@ -108,7 +108,7 @@ void LedSk_t::ISetCurrentColors() {
 #if 1 // ========================== Common Effects =============================
 EffAllTogetherNow_t EffAllTogetherNow;
 EffAllTogetherSmoothly_t EffAllTogetherSmoothly;
-EffFadeOneByOne_t EffFadeOneByOne(180, clRGBWGreen, clRGBWBlack);
+EffFadeOneByOne_t EffFadeOneByOne(180, clRGBWStars, clRGBWBlack);
 
 static EffBase_t *PCurrentEff = nullptr;
 static thread_reference_t PThd = nullptr;
@@ -195,8 +195,8 @@ void EffFadeOneByOne_t::SetupAndStart(int32_t ThrLo, int32_t ThrHi) {
             int32_t Indx = ThrLo + i;
             if(Indx >=0 and Indx < LED_CNT) {
                 int32_t Brt = (i * BrtStep) / 1024;
-                Printf("%d Brt: %d\r", Indx, Brt);
-                DesiredClr[Indx].BeMixOf(IClrLo, IClrHi, Brt);
+//                Printf("%d Brt: %d\r", Indx, Brt);
+                DesiredClr[Indx].BeMixOf(IClrHi, IClrLo, Brt);
             }
         }
     } // if(ThrHi > ThrLo)
