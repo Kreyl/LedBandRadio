@@ -21,10 +21,12 @@ static void ITask();
 static void OnCmd(Shell_t *PShell);
 
 static void PercentToFade(int32_t Percent);
+static void SavePercent(int32_t Percent);
 
 LedOnOff_t Led {LED_PIN};
 PinOutput_t LedWsEn {LED_WS_EN};
 Color_t Clr(0, 255, 0, 0);
+#define EE_ADDR_PERCENT     4
 #endif
 
 int main(void) {
@@ -49,9 +51,16 @@ int main(void) {
     Printf("\r%S %S\r", APP_NAME, BUILD_TIME);
     Clk.PrintFreqs();
 
+    // Read percent from EE
+    int32_t Percent = EE::Read32(EE_ADDR_PERCENT);
+    if(Percent < 0 or Percent > 100) {
+        Printf("Using default percent\r");
+        Percent = 100;
+    }
+    else Printf("Loaded %d\r", Percent);
+
     // Debug LED
-//    Led.Init();
-//    Led.On();
+    Led.Init();
 
     if(Radio.Init() != retvOk) {
         for(int i=0; i<4; i++) {
@@ -61,6 +70,7 @@ int main(void) {
             Led.On();
         }
     }
+    else Led.Off();
 
     // LEDs
     LedWsEn.Init();
@@ -68,11 +78,12 @@ int main(void) {
     LedEffectsInit();
 
     EffFadeOneByOne.SetupIDs();
-    EffAllTogetherSmoothly.SetupAndStart(clRGBWStars, 360);
+//    EffAllTogetherSmoothly.SetupAndStart(clRGBWStars, 360);
 //    EffAllTogetherNow.SetupAndStart((Color_t){255,0,0,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,0,0,255});
+    PercentToFade(Percent);
 
     // Main cycle
     ITask();
@@ -87,6 +98,7 @@ void ITask() {
             case evtIdRadioCmd:
                 Printf("New percent: %d\r", Msg.Value);
                 PercentToFade(Msg.Value);
+                SavePercent(Msg.Value);
                 break;
 
 #if UART_RX_ENABLED
@@ -115,6 +127,12 @@ void PercentToFade(int32_t Percent) {
     EffFadeOneByOne.SetupAndStart(FThrLo, FThrHi);
 }
 
+void SavePercent(int32_t Percent) {
+    if(Percent > 100 or Percent < 0) return;
+    uint8_t rslt = EE::Write32(EE_ADDR_PERCENT, Percent);
+    if(rslt == retvOk) Printf("Saved: %d\r", Percent);
+    else Printf("EE error: %u\r", rslt);
+}
 
 #if UART_RX_ENABLED // ================= Command processing ====================
 void OnCmd(Shell_t *PShell) {
@@ -150,6 +168,7 @@ void OnCmd(Shell_t *PShell) {
         int32_t Percent = 0;
         if(PCmd->GetNext<int32_t>(&Percent) != retvOk) return;
         PercentToFade(Percent);
+        SavePercent(Percent);
         PShell->Ack(retvOk);
     }
 

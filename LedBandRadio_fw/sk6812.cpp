@@ -182,7 +182,7 @@ void EffFadeOneByOne_t::SetupIDs() {
 }
 
 void EffFadeOneByOne_t::SetupAndStart(int32_t ThrLo, int32_t ThrHi) {
-    Printf("ThrLo: %d; ThrHi: %d\r", ThrLo, ThrHi);
+//    Printf("ThrLo: %d; ThrHi: %d\r", ThrLo, ThrHi);
     // Setup ColorLo
     for(int32_t i=0; i < ThrLo; i++) DesiredClr[i] = IClrLo;
     // Setup ColorHi
