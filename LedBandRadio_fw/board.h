@@ -11,7 +11,7 @@
 
 // ==== General ====
 #define BOARD_NAME          "LedBandRadio v2"
-#define APP_NAME            "StarPath"
+#define APP_NAME            "Sphere"
 
 // MCU type as defined in the ST header.
 #define STM32L151xB

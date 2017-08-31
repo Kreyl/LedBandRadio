@@ -11,7 +11,8 @@
 #include "MsgQ.h"
 #include "led.h"
 #include "radio_lvl1.h"
-#include "sk6812.h"
+#include "ws2812b.h"
+#include "IntelLedEffs.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -19,9 +20,6 @@ EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
 extern CmdUart_t Uart;
 static void ITask();
 static void OnCmd(Shell_t *PShell);
-
-static void PercentToFade(int32_t Percent);
-static void SavePercent(int32_t Percent);
 
 LedOnOff_t Led {LED_PIN};
 PinOutput_t LedWsEn {LED_WS_EN};
@@ -51,19 +49,11 @@ int main(void) {
     Printf("\r%S %S\r", APP_NAME, BUILD_TIME);
     Clk.PrintFreqs();
 
-    // Read percent from EE
-    int32_t Percent = EE::Read32(EE_ADDR_PERCENT);
-    if(Percent < 0 or Percent > 100) {
-        Printf("Using default percent\r");
-        Percent = 100;
-    }
-    else Printf("Loaded %d\r", Percent);
-
     // Debug LED
     Led.Init();
 
     if(Radio.Init() != retvOk) {
-        for(int i=0; i<4; i++) {
+        for(int i=0; i<45; i++) {
             chThdSleepMilliseconds(135);
             Led.Off();
             chThdSleepMilliseconds(135);
@@ -77,13 +67,11 @@ int main(void) {
     LedWsEn.SetLo();
     LedEffectsInit();
 
-    EffFadeOneByOne.SetupIDs();
+//    EffFadeOneByOne.SetupIDs();
 //    EffAllTogetherSmoothly.SetupAndStart(clRGBWStars, 360);
-//    EffAllTogetherNow.SetupAndStart((Color_t){255,0,0,0});
-//    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0,0});
-//    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255,0});
-//    EffAllTogetherNow.SetupAndStart((Color_t){0,0,0,255});
-    PercentToFade(Percent);
+    EffAllTogetherNow.SetupAndStart((Color_t){255,0,0});
+//    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0});
+//    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255});
 
     // Main cycle
     ITask();
@@ -97,8 +85,6 @@ void ITask() {
         switch(Msg.ID) {
             case evtIdRadioCmd:
                 Printf("New percent: %d\r", Msg.Value);
-                PercentToFade(Msg.Value);
-                SavePercent(Msg.Value);
                 break;
 
 #if UART_RX_ENABLED
@@ -112,28 +98,6 @@ void ITask() {
     } // while true
 } // App_t::ITask()
 
-void PercentToFade(int32_t Percent) {
-    int32_t FThrLo=0, FThrHi=0;
-    if(Percent > 100 or Percent < 0) return;
-    if(Percent >= 70) {
-        FThrLo = Proportion<int32_t>(70, 100, 0, 359, Percent);
-        FThrHi = LED_CNT;
-    }
-    else {
-        FThrLo = 0;
-        FThrHi = Proportion<int32_t>(0, 70, 1, 359, Percent);
-    }
-    Printf("Prc: %d; Lo: %d; Hi: %d\r", Percent, FThrLo, FThrHi);
-    EffFadeOneByOne.SetupAndStart(FThrLo, FThrHi);
-}
-
-void SavePercent(int32_t Percent) {
-    if(Percent > 100 or Percent < 0) return;
-    uint8_t rslt = EE::Write32(EE_ADDR_PERCENT, Percent);
-    if(rslt == retvOk) Printf("Saved: %d\r", Percent);
-    else Printf("EE error: %u\r", rslt);
-}
-
 #if UART_RX_ENABLED // ================= Command processing ====================
 void OnCmd(Shell_t *PShell) {
 	Cmd_t *PCmd = &PShell->Cmd;
@@ -145,14 +109,13 @@ void OnCmd(Shell_t *PShell) {
 
     else if(PCmd->NameIs("Version")) PShell->Printf("%S %S\r", APP_NAME, BUILD_TIME);
 
-    else if(PCmd->NameIs("RGBW")) {
-        Color_t FClr(0,0,0,0);
+    else if(PCmd->NameIs("RGB")) {
+        Color_t FClr(0,0,0);
         if(PCmd->GetNext<uint8_t>(&FClr.R) != retvOk) return;
         if(PCmd->GetNext<uint8_t>(&FClr.G) != retvOk) return;
         if(PCmd->GetNext<uint8_t>(&FClr.B) != retvOk) return;
-        if(PCmd->GetNext<uint8_t>(&FClr.W) != retvOk) return;
-//        EffAllTogetherNow.SetupAndStart(FClr);
-        EffAllTogetherSmoothly.SetupAndStart(FClr, 360);
+        EffAllTogetherNow.SetupAndStart(FClr);
+//        EffAllTogetherSmoothly.SetupAndStart(FClr, 360);
         PShell->Ack(retvOk);
     }
 
@@ -160,15 +123,7 @@ void OnCmd(Shell_t *PShell) {
         int32_t FThrLo=0, FThrHi=0;
         if(PCmd->GetNext<int32_t>(&FThrLo) != retvOk) return;
         if(PCmd->GetNext<int32_t>(&FThrHi) != retvOk) return;
-        EffFadeOneByOne.SetupAndStart(FThrLo, FThrHi);
-        PShell->Ack(retvOk);
-    }
-
-    else if(PCmd->NameIs("Prc")) {
-        int32_t Percent = 0;
-        if(PCmd->GetNext<int32_t>(&Percent) != retvOk) return;
-        PercentToFade(Percent);
-        SavePercent(Percent);
+//        EffFadeOneByOne.SetupAndStart(FThrLo, FThrHi);
         PShell->Ack(retvOk);
     }
 
