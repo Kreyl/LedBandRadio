@@ -46,7 +46,7 @@ void rLevel1_t::ITask() {
         if(RxRslt == retvOk and Pkt.TestWord == TEST_WORD) {
 //            Printf("Rx %u %X; Rssi=%d\r", Pkt.Percent, Pkt.TestWord, Rssi);
             // Send message to main thd
-            EvtMsg_t Msg(evtIdRadioCmd, Pkt.Percent);
+            EvtMsg_t Msg(evtIdRadioCmd, Pkt.Btn);
             EvtQMain.SendNowOrExit(Msg);
             // Report reception
             CC.Recalibrate();

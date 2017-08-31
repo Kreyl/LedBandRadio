@@ -57,7 +57,7 @@ static inline void Lvl250ToLvl1000(uint16_t *PLvl) {
 
 #if 1 // =========================== Pkt_t =====================================
 struct rPkt_t  {
-    uint8_t Percent;
+    uint8_t Btn;
     uint32_t TestWord;
 } __packed;
 

@@ -84,7 +84,21 @@ void ITask() {
 //        Printf("Msg %u\r", Msg.ID);
         switch(Msg.ID) {
             case evtIdRadioCmd:
-                Printf("New percent: %d\r", Msg.Value);
+                Printf("Btn: %d\r", Msg.Value);
+                switch(Msg.Value) {
+                    case 0:
+                        EffAllTogetherNow.SetupAndStart((Color_t){255,0,0});
+                        break;
+                    case 1:
+                        EffAllTogetherNow.SetupAndStart((Color_t){0, 255,0});
+                        break;
+                    case 2:
+                        EffAllTogetherNow.SetupAndStart((Color_t){0,0,255});
+                        break;
+                    case 3:
+                        EffAllTogetherNow.SetupAndStart((Color_t){0,255,255});
+                        break;
+                } // switch
                 break;
 
 #if UART_RX_ENABLED
