@@ -18,4 +18,6 @@ enum EvtMsgId_t {
     // Not eternal
     evtIdButtons = 15,
     evtIdRadioCmd = 18,
+
+    evtIdLedEnd = 27,
 };

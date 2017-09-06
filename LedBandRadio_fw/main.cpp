@@ -25,7 +25,18 @@ static void OnCmd(Shell_t *PShell);
 LedOnOff_t Led {LED_PIN};
 PinOutput_t LedWsEn {LED_WS_EN};
 Color_t Clr(0, 255, 0, 0);
-#define EE_ADDR_PERCENT     4
+
+LedRGBChunk_t lsqState4[] = {
+        {csSetup, 0, clWhite},
+        {csWait, 45},
+        {csSetup, 0, clBlack},
+        {csWait, 270},
+        {csEnd}
+};
+bool IsState4 = false;
+enum Btn2State_t {st2Blue, st2Red, st2Off};
+Btn2State_t Btn2State = st2Off;
+
 #endif
 
 int main(void) {
@@ -77,6 +88,9 @@ int main(void) {
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255});
     EffAllTogetherSequence.StartOrRestart(lsqStart);
 
+    EvtMsg_t Msg(evtIdLedEnd);
+    EffAllTogetherSequence.SetupSeqEndEvt(Msg);
+
     // Main cycle
     ITask();
 }
@@ -89,21 +103,49 @@ void ITask() {
         switch(Msg.ID) {
             case evtIdRadioCmd:
                 Printf("Btn: %d\r", Msg.Value);
+                IsState4 = false;
                 switch(Msg.Value) {
                     case 0:
-                        EffAllTogetherNow.SetupAndStart((Color_t){255,0,0});
+                        EffAllTogetherSequence.StartOrRestart(lsqState1);
+                        Btn2State = st2Off;
                         break;
+
                     case 1:
-                        EffAllTogetherNow.SetupAndStart((Color_t){0, 255,0});
+                        switch(Btn2State) {
+                            case st2Off:
+                                EffAllTogetherSequence.StartOrRestart(lsqState23);
+                                Btn2State = st2Blue;
+                                break;
+                            case st2Blue:
+                                EffAllTogetherSequence.StartOrRestart(lsqState2);
+                                Btn2State = st2Red;
+                                break;
+                            case st2Red:
+                                EffAllTogetherSequence.StartOrRestart(lsqState22);
+                                Btn2State = st2Off;
+                                break;
+                        } // switch
                         break;
+
                     case 2:
-                        EffAllTogetherNow.SetupAndStart((Color_t){0,0,255});
+                        EffAllTogetherSequence.StartOrRestart(lsqState3);
+                        Btn2State = st2Off;
                         break;
                     case 3:
-                        EffAllTogetherNow.SetupAndStart((Color_t){0,255,255});
+                        EffAllTogetherSequence.StartOrRestart(lsqState4);
+                        Btn2State = st2Off;
+                        IsState4 = true;
                         break;
                 } // switch
                 break;
+
+                case evtIdLedEnd:
+                    if(IsState4) {
+                        lsqState4[1].Time_ms = Random(4, 27);
+                        lsqState4[3].Time_ms = Random(27, 270);
+                        EffAllTogetherSequence.StartOrRestart(lsqState4);
+                    }
+                    break;
 
 #if UART_RX_ENABLED
             case evtIdShellCmd:

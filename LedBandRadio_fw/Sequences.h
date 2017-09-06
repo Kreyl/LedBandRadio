@@ -193,9 +193,8 @@ const LedRGBChunk_t lsqStart[] = {
         {csSetup, 99, clRed},
         {csSetup, 99, clGreen},
         {csSetup, 99, clBlue},
-//        {csSetup, 99, clBlack},
-        {csGoto, 0}
-//        {csEnd}
+        {csSetup, 99, clBlack},
+        {csEnd}
 };
 
 const LedRGBChunk_t lsqFailure[] = {
@@ -213,25 +212,43 @@ const LedRGBChunk_t lsqFailure[] = {
         {csEnd}
 };
 
-//const LedRGBChunk_t lsqCharging[] = {
-//        {csSetup, 540, {0,9,0}},
-//        {csSetup, 540, clBlack},
-//        {csWait, 900},
-//        {csGoto, 0}
-//};
-//
-//const LedRGBChunk_t lsqChargingDone[] = {
-//        {csSetup, 0, {0,9,0}},
-//        {csEnd}
-//};
-//
-//const LedRGBChunk_t lsqDischarged[] = {
-//        {csSetup, 0, clRed},
-//        {csWait, 180},
+const LedRGBChunk_t lsqState1[] = {
+        {csSetup, 540, clBlue},
+        {csSetup, 540, clBlack},
+        {csEnd}
+};
+
+const LedRGBChunk_t lsqState2[] = {
+        {csSetup, 0, clBlue},
+        {csEnd}
+};
+const LedRGBChunk_t lsqState22[] = {
+        {csSetup, 0, clRed},
+        {csEnd}
+};
+const LedRGBChunk_t lsqState23[] = {
+        {csSetup, 0, clBlack},
+        {csEnd}
+};
+
+const LedRGBChunk_t lsqState3[] = {
+        {csSetup, 450, clRed},
+        {csSetup, 450, {9,0,0}},
+        {csGoto, 0}
+};
+
+//const LedRGBChunk_t lsqState4[] = {
+//        {csSetup, 0, clWhite},
+//        {csEnd},
+//        {csWait, 45},
 //        {csSetup, 0, clBlack},
-//        {csWait, 360},
+//        {csWait, 810},
+//        {csSetup, 0, {255,0,255}},
+//        {csWait, 45},
+//        {csSetup, 0, clBlack},
 //        {csGoto, 0}
 //};
+
 #endif
 
 #if 1 // ======================== Simple LED blink =============================
@@ -250,6 +267,9 @@ const BaseChunk_t lbsqBlink3[] = {
         {csSetup, 0},
         {csEnd}
 };
+
+
+
 #endif
 
 #if 0 // =========================== LED Smooth ================================
