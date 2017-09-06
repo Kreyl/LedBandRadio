@@ -12,7 +12,8 @@ IntelLeds_t Leds;
 #if 1 // ========================== Common Effects =============================
 EffAllTogetherNow_t EffAllTogetherNow;
 EffAllTogetherSmoothly_t EffAllTogetherSmoothly;
-EffFadeOneByOne_t EffFadeOneByOne(180, clRGBWStars, clRGBWBlack);
+//EffFadeOneByOne_t EffFadeOneByOne(180, clRGBWStars, clRGBWBlack);
+EffAllTogetherSequence_t EffAllTogetherSequence;
 
 static EffBase_t *PCurrentEff = nullptr;
 static thread_reference_t PThd = nullptr;
@@ -80,6 +81,11 @@ EffState_t EffAllTogetherSmoothly_t::Process() {
     }
 }
 
+// ======================== EffAllTogetherSequence_t ===========================
+void EffAllTogetherSequence_t::SetupColors() {
+    for(int32_t i=0; i<LED_CNT; i++) Leds.ICurrentClr[i] = ICurrColor;
+    Leds.ISetCurrentColors();
+}
 
 void EffFadeOneByOne_t::SetupIDs() {
     for(uint32_t i=0; i<LED_CNT; i++) IDs[i] = i;

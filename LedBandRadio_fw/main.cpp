@@ -13,6 +13,7 @@
 #include "radio_lvl1.h"
 #include "ws2812b.h"
 #include "IntelLedEffs.h"
+#include "Sequences.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -67,11 +68,14 @@ int main(void) {
     LedWsEn.SetLo();
     LedEffectsInit();
 
+//    EffAllTogetherSequence.
+
 //    EffFadeOneByOne.SetupIDs();
 //    EffAllTogetherSmoothly.SetupAndStart(clRGBWStars, 360);
-    EffAllTogetherNow.SetupAndStart((Color_t){255,0,0});
+//    EffAllTogetherNow.SetupAndStart((Color_t){255,0,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255});
+    EffAllTogetherSequence.StartOrRestart(lsqStart);
 
     // Main cycle
     ITask();

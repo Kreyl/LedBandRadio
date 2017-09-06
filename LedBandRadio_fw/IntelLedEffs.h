@@ -10,6 +10,7 @@
 #include <inttypes.h>
 #include "color.h"
 #include "ws2812b.h"
+#include "ChunkTypes.h"
 
 #if 1 // =============================== Chunk =================================
 class LedChunk_t {
@@ -55,6 +56,40 @@ public:
     EffState_t Process();
 };
 
+class EffAllTogetherSequence_t : public EffBase_t, public BaseSequencer_t<LedRGBChunk_t> {
+private:
+    Color_t ICurrColor;
+    EffState_t Process() { return effEnd; } // Dummy, never used
+    void ISwitchOff() {
+        ICurrColor = clBlack;
+    }
+    void SetupColors();
+
+    SequencerLoopTask_t ISetup() {
+        if(ICurrColor != IPCurrentChunk->Color) {
+            if(IPCurrentChunk->Value == 0) {     // If smooth time is zero,
+                ICurrColor = IPCurrentChunk->Color;// set color now,
+                SetupColors();
+                IPCurrentChunk++;                // and goto next chunk
+            }
+            else {
+                ICurrColor.Adjust(IPCurrentChunk->Color);
+                SetupColors();
+                // Check if completed now
+                if(ICurrColor == IPCurrentChunk->Color) IPCurrentChunk++;
+                else { // Not completed
+                    // Calculate time to next adjustment
+                    uint32_t Delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->Value);
+                    SetupDelay(Delay);
+                    return sltBreak;
+                } // Not completed
+            } // if time > 256
+        } // if color is different
+        else IPCurrentChunk++; // Color is the same, goto next chunk
+        return sltProceed;
+    }
+};
+
 class EffFadeOneByOne_t : public EffAllTogetherSmoothly_t {
 private:
     uint8_t IDs[LED_CNT];
@@ -69,6 +104,7 @@ public:
 extern EffAllTogetherNow_t EffAllTogetherNow;
 extern EffAllTogetherSmoothly_t EffAllTogetherSmoothly;
 extern EffFadeOneByOne_t EffFadeOneByOne;
+extern EffAllTogetherSequence_t EffAllTogetherSequence;
 
 void LedEffectsInit();
 
