@@ -1,10 +1,3 @@
-/*
- * main.cpp
- *
- *  Created on: 20 февр. 2014 г.
- *      Author: g.kruglov
- */
-
 #include "board.h"
 #include "uart.h"
 #include "shell.h"
@@ -18,24 +11,14 @@
 #if 1 // ======================== Variables and defines ========================
 // Forever
 EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
-extern CmdUart_t Uart;
+static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
+extern CmdUart_t Uart{&CmdUartParams};
 static void ITask();
 static void OnCmd(Shell_t *PShell);
 
 LedOnOff_t Led {LED_PIN};
 PinOutput_t LedWsEn {LED_WS_EN};
-Color_t Clr(0, 255, 0, 0);
-
-LedRGBChunk_t lsqState4[] = {
-        {csSetup, 0, clWhite},
-        {csWait, 45},
-        {csSetup, 0, clBlack},
-        {csWait, 270},
-        {csEnd}
-};
-bool IsState4 = false;
-enum Btn2State_t {st2Blue, st2Red, st2Off};
-Btn2State_t Btn2State = st2Off;
+//Color_t Clr(0, 255, 0, 0);
 
 #endif
 
@@ -57,27 +40,27 @@ int main(void) {
     EvtQMain.Init();
 
     // ==== Init hardware ====
-    Uart.Init(115200);
-    Printf("\r%S %S\r", APP_NAME, BUILD_TIME);
+    Uart.Init();
+    Printf("\r%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk.PrintFreqs();
 
     // Debug LED
     Led.Init();
 
-    if(Radio.Init() != retvOk) {
-        for(int i=0; i<45; i++) {
-            chThdSleepMilliseconds(135);
-            Led.Off();
-            chThdSleepMilliseconds(135);
-            Led.On();
-        }
-    }
-    else Led.Off();
+//    if(Radio.Init() != retvOk) {
+//        for(int i=0; i<45; i++) {
+//            chThdSleepMilliseconds(135);
+//            Led.Off();
+//            chThdSleepMilliseconds(135);
+//            Led.On();
+//        }
+//    }
+//    else Led.Off();
 
     // LEDs
-    LedWsEn.Init();
-    LedWsEn.SetLo();
-    LedEffectsInit();
+//    LedWsEn.Init();
+//    LedWsEn.SetLo();
+//    LedEffectsInit();
 
 //    EffAllTogetherSequence.
 
@@ -86,10 +69,10 @@ int main(void) {
 //    EffAllTogetherNow.SetupAndStart((Color_t){255,0,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255});
-    EffAllTogetherSequence.StartOrRestart(lsqStart);
+//    EffAllTogetherSequence.StartOrRestart(lsqStart);
 
-    EvtMsg_t Msg(evtIdLedEnd);
-    EffAllTogetherSequence.SetupSeqEndEvt(Msg);
+//    EvtMsg_t Msg(evtIdLedEnd);
+//    EffAllTogetherSequence.SetupSeqEndEvt(Msg);
 
     // Main cycle
     ITask();
@@ -103,62 +86,19 @@ void ITask() {
         switch(Msg.ID) {
             case evtIdRadioCmd:
                 Printf("Btn: %d\r", Msg.Value);
-                IsState4 = false;
-                switch(Msg.Value) {
-                    case 0:
-                        EffAllTogetherSequence.StartOrRestart(lsqState1);
-                        Btn2State = st2Off;
-                        break;
-
-                    case 1:
-                        switch(Btn2State) {
-                            case st2Off:
-                                EffAllTogetherSequence.StartOrRestart(lsqState23);
-                                Btn2State = st2Blue;
-                                break;
-                            case st2Blue:
-                                EffAllTogetherSequence.StartOrRestart(lsqState2);
-                                Btn2State = st2Red;
-                                break;
-                            case st2Red:
-                                EffAllTogetherSequence.StartOrRestart(lsqState22);
-                                Btn2State = st2Off;
-                                break;
-                        } // switch
-                        break;
-
-                    case 2:
-                        EffAllTogetherSequence.StartOrRestart(lsqState3);
-                        Btn2State = st2Off;
-                        break;
-                    case 3:
-                        EffAllTogetherSequence.StartOrRestart(lsqState4);
-                        Btn2State = st2Off;
-                        IsState4 = true;
-                        break;
-                } // switch
                 break;
 
-                case evtIdLedEnd:
-                    if(IsState4) {
-                        lsqState4[1].Time_ms = Random(4, 27);
-                        lsqState4[3].Time_ms = Random(27, 270);
-                        EffAllTogetherSequence.StartOrRestart(lsqState4);
-                    }
-                    break;
-
-#if UART_RX_ENABLED
             case evtIdShellCmd:
                 OnCmd((Shell_t*)Msg.Ptr);
                 ((Shell_t*)Msg.Ptr)->SignalCmdProcessed();
                 break;
-#endif
+
             default: Printf("Unhandled Msg %u\r", Msg.ID); break;
         } // Switch
     } // while true
 } // App_t::ITask()
 
-#if UART_RX_ENABLED // ================= Command processing ====================
+#if 1 // ================= Command processing ====================
 void OnCmd(Shell_t *PShell) {
 	Cmd_t *PCmd = &PShell->Cmd;
 //    Uart.Printf("%S\r", PCmd->Name);
@@ -167,25 +107,25 @@ void OnCmd(Shell_t *PShell) {
         PShell->Ack(retvOk);
     }
 
-    else if(PCmd->NameIs("Version")) PShell->Printf("%S %S\r", APP_NAME, BUILD_TIME);
+    else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
 
-    else if(PCmd->NameIs("RGB")) {
-        Color_t FClr(0,0,0);
-        if(PCmd->GetNext<uint8_t>(&FClr.R) != retvOk) return;
-        if(PCmd->GetNext<uint8_t>(&FClr.G) != retvOk) return;
-        if(PCmd->GetNext<uint8_t>(&FClr.B) != retvOk) return;
-        EffAllTogetherNow.SetupAndStart(FClr);
-//        EffAllTogetherSmoothly.SetupAndStart(FClr, 360);
-        PShell->Ack(retvOk);
-    }
-
-    else if(PCmd->NameIs("Fade")) {
-        int32_t FThrLo=0, FThrHi=0;
-        if(PCmd->GetNext<int32_t>(&FThrLo) != retvOk) return;
-        if(PCmd->GetNext<int32_t>(&FThrHi) != retvOk) return;
-//        EffFadeOneByOne.SetupAndStart(FThrLo, FThrHi);
-        PShell->Ack(retvOk);
-    }
+//    else if(PCmd->NameIs("RGB")) {
+//        Color_t FClr(0,0,0);
+//        if(PCmd->GetNext<uint8_t>(&FClr.R) != retvOk) return;
+//        if(PCmd->GetNext<uint8_t>(&FClr.G) != retvOk) return;
+//        if(PCmd->GetNext<uint8_t>(&FClr.B) != retvOk) return;
+//        EffAllTogetherNow.SetupAndStart(FClr);
+////        EffAllTogetherSmoothly.SetupAndStart(FClr, 360);
+//        PShell->Ack(retvOk);
+//    }
+//
+//    else if(PCmd->NameIs("Fade")) {
+//        int32_t FThrLo=0, FThrHi=0;
+//        if(PCmd->GetNext<int32_t>(&FThrLo) != retvOk) return;
+//        if(PCmd->GetNext<int32_t>(&FThrHi) != retvOk) return;
+////        EffFadeOneByOne.SetupAndStart(FThrLo, FThrHi);
+//        PShell->Ack(retvOk);
+//    }
 
     else PShell->Ack(retvCmdUnknown);
 }

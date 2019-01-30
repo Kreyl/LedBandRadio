@@ -11,7 +11,7 @@
 
 // ==== General ====
 #define BOARD_NAME          "LedBandRadio v2"
-#define APP_NAME            "Sphere"
+#define APP_NAME            "Stone2Color"
 
 // MCU type as defined in the ST header.
 #define STM32L151xB
@@ -37,6 +37,7 @@
 #define UART_RX_PIN     3
 
 // LEDs
+#define LED_CNT
 #define LED_PIN         GPIOB, 4, omPushPull
 #define LEDWS_PIN       GPIOB, 15, omPushPull, pudNone, AF5, psHigh
 #define LED_WS_EN       GPIOB, 14, omPushPull
@@ -45,11 +46,6 @@
 // Radio: SPI, PGpio, Sck, Miso, Mosi, Cs, Gdo0
 #define CC_Setup0       SPI1, GPIOA, 5,6,7, 4, 1
 #endif // GPIO
-
-#if 1 // ========================== USART ======================================
-#define CMD_UART        USART2
-#define UART_TXBUF_SZ   1024
-#endif
 
 #if ADC_REQUIRED // ======================= Inner ADC ==========================
 // Clock divider: clock is generated from the APB2
@@ -75,6 +71,8 @@
 #if 1 // =========================== DMA =======================================
 #define STM32_DMA_REQUIRED  TRUE
 // ==== Uart ====
+#define UART_DMA_TX_MODE(Chnl) (STM32_DMA_CR_CHSEL(Chnl) | DMA_PRIORITY_LOW | STM32_DMA_CR_MSIZE_BYTE | STM32_DMA_CR_PSIZE_BYTE | STM32_DMA_CR_MINC | STM32_DMA_CR_DIR_M2P | STM32_DMA_CR_TCIE)
+#define UART_DMA_RX_MODE(Chnl) (STM32_DMA_CR_CHSEL(Chnl) | DMA_PRIORITY_MEDIUM | STM32_DMA_CR_MSIZE_BYTE | STM32_DMA_CR_PSIZE_BYTE | STM32_DMA_CR_MINC | STM32_DMA_CR_DIR_P2M | STM32_DMA_CR_CIRC)
 #define UART_DMA_TX     STM32_DMA1_STREAM7
 #define UART_DMA_RX     STM32_DMA1_STREAM6
 #define UART_DMA_CHNL   0   // Dummy
@@ -98,3 +96,16 @@
 #endif // ADC
 
 #endif // DMA
+
+#if 1 // ========================== USART ======================================
+#define PRINTF_FLOAT_EN FALSE
+#define UART_TXBUF_SZ   256
+#define UART_RXBUF_SZ   99
+
+#define UARTS_CNT       1
+
+#define CMD_UART_PARAMS \
+    USART2, UART_GPIO, UART_TX_PIN, UART_GPIO, UART_RX_PIN, \
+    UART_DMA_TX, UART_DMA_RX, UART_DMA_TX_MODE(UART_DMA_CHNL), UART_DMA_RX_MODE(UART_DMA_CHNL)
+
+#endif
