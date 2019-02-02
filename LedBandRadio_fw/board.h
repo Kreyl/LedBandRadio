@@ -37,11 +37,14 @@
 #define UART_RX_PIN     3
 
 // LEDs
-#define LED_CNT
 #define LED_PIN         GPIOB, 4, omPushPull
-#define LEDWS_PIN       GPIOB, 15, omPushPull, pudNone, AF5, psHigh
-#define LED_WS_EN       GPIOB, 14, omPushPull
-#define LEDWS_SPI       SPI2
+#define NPX1_EN         GPIOB, 14, omPushPull
+
+#define NPX1_CNT        150
+#define NPX1_SPI        SPI2
+#define NPX1_GPIO       GPIOB
+#define NPX1_PIN        15
+#define NPX1_AF         AF5
 
 // Radio: SPI, PGpio, Sck, Miso, Mosi, Cs, Gdo0
 #define CC_Setup0       SPI1, GPIOA, 5,6,7, 4, 1
@@ -77,7 +80,8 @@
 #define UART_DMA_RX     STM32_DMA1_STREAM6
 #define UART_DMA_CHNL   0   // Dummy
 
-#define LEDWS_DMA       STM32_DMA1_STREAM5  // SPI2 TX
+#define NPX1_DMA        STM32_DMA1_STREAM5  // SPI2 TX
+#define NPX1_DMA_CHNL   0 // dummy
 
 // ==== I2C1 ====
 #define I2C1_DMA_TX     STM32_DMA1_STREAM6

@@ -7,7 +7,7 @@
 
 #include "IntelLedEffs.h"
 
-IntelLeds_t Leds;
+extern Neopixels_t Leds;
 
 #if 1 // ========================== Common Effects =============================
 EffAllTogetherNow_t EffAllTogetherNow;
@@ -17,7 +17,7 @@ EffAllTogetherSequence_t EffAllTogetherSequence;
 
 static EffBase_t *PCurrentEff = nullptr;
 static thread_reference_t PThd = nullptr;
-static Color_t DesiredClr[LED_CNT];
+static Color_t DesiredClr[NPX1_CNT];
 
 static THD_WORKING_AREA(waEffectsThread, 64);
 __noreturn
@@ -38,11 +38,10 @@ static void EffectsThread(void *arg) {
 }
 
 uint32_t ICalcDelayN(uint32_t n, uint32_t SmoothValue) {
-    return Leds.ICurrentClr[n].DelayToNextAdj(DesiredClr[n], SmoothValue);
+    return Leds.ClrBuf[n].DelayToNextAdj(DesiredClr[n], SmoothValue);
 }
 
 void LedEffectsInit() {
-    Leds.Init();
     chThdCreateStatic(waEffectsThread, sizeof(waEffectsThread), HIGHPRIO, (tfunc_t)EffectsThread, NULL);
 }
 #endif
@@ -50,8 +49,8 @@ void LedEffectsInit() {
 #if 1 // ========================= Individual effects ==========================
 void EffAllTogetherNow_t::SetupAndStart(Color_t Color) {
     PCurrentEff = nullptr;
-    for(uint32_t i=0; i<LED_CNT; i++) Leds.ICurrentClr[i] = Color;
-    Leds.ISetCurrentColors();
+    for(uint32_t i=0; i<NPX1_CNT; i++) Leds.ClrBuf[i] = Color;
+    Leds.SetCurrentColors();
 }
 
 void EffAllTogetherSmoothly_t::SetupAndStart(Color_t Color, uint32_t ASmoothValue) {
@@ -59,7 +58,7 @@ void EffAllTogetherSmoothly_t::SetupAndStart(Color_t Color, uint32_t ASmoothValu
     else {
         chSysLock();
         ISmoothValue = ASmoothValue;
-        for(int32_t i=0; i<LED_CNT; i++) DesiredClr[i] = Color;
+        for(int32_t i=0; i<NPX1_CNT; i++) DesiredClr[i] = Color;
         PCurrentEff = this;
         chThdResumeS(&PThd, MSG_OK);
         chSysUnlock();
@@ -68,12 +67,12 @@ void EffAllTogetherSmoothly_t::SetupAndStart(Color_t Color, uint32_t ASmoothValu
 
 EffState_t EffAllTogetherSmoothly_t::Process() {
     uint32_t Delay = 0;
-    for(int32_t i=0; i<LED_CNT; i++) {
+    for(int32_t i=0; i<NPX1_CNT; i++) {
         uint32_t tmp = ICalcDelayN(i, ISmoothValue);  // }
         if(tmp > Delay) Delay = tmp;                  // } Calculate Delay
-        Leds.ICurrentClr[i].Adjust(DesiredClr[i]);    // Adjust current color
+        Leds.ClrBuf[i].Adjust(DesiredClr[i]);    // Adjust current color
     } // for
-    Leds.ISetCurrentColors();
+    Leds.SetCurrentColors();
     if (Delay == 0) return effEnd;  // Setup completed
     else {
         chThdSleepMilliseconds(Delay);
@@ -83,12 +82,12 @@ EffState_t EffAllTogetherSmoothly_t::Process() {
 
 // ======================== EffAllTogetherSequence_t ===========================
 void EffAllTogetherSequence_t::SetupColors() {
-    for(int32_t i=0; i<LED_CNT; i++) Leds.ICurrentClr[i] = ICurrColor;
-    Leds.ISetCurrentColors();
+//    for(int32_t i=0; i<LED_CNT; i++) Leds.ICurrentClr[i] = ICurrColor;
+//    Leds.ISetCurrentColors();
 }
 
 void EffFadeOneByOne_t::SetupIDs() {
-    for(uint32_t i=0; i<LED_CNT; i++) IDs[i] = i;
+    for(uint32_t i=0; i<NPX1_CNT; i++) IDs[i] = i;
 }
 
 void EffFadeOneByOne_t::SetupAndStart(int32_t ThrLo, int32_t ThrHi) {
@@ -96,14 +95,14 @@ void EffFadeOneByOne_t::SetupAndStart(int32_t ThrLo, int32_t ThrHi) {
     // Setup ColorLo
     for(int32_t i=0; i < ThrLo; i++) DesiredClr[i] = IClrLo;
     // Setup ColorHi
-    for(int32_t i=ThrHi; i < LED_CNT; i++) DesiredClr[i] = IClrHi;
+    for(int32_t i=ThrHi; i < NPX1_CNT; i++) DesiredClr[i] = IClrHi;
     // Setup gradient
     if(ThrHi > ThrLo) {
         int32_t Len = ThrHi - ThrLo;
         int32_t BrtStep = (255 * 1024) / Len;   // 255 is top brightness, 1024 is scaling coef
         for(int32_t i=0; i<Len; i++) {
             int32_t Indx = ThrLo + i;
-            if(Indx >=0 and Indx < LED_CNT) {
+            if(Indx >=0 and Indx < NPX1_CNT) {
                 int32_t Brt = (i * BrtStep) / 1024;
 //                Printf("%d Brt: %d\r", Indx, Brt);
                 DesiredClr[Indx].BeMixOf(IClrHi, IClrLo, Brt);

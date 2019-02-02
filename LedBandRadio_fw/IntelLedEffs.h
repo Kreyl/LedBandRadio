@@ -92,7 +92,7 @@ private:
 
 class EffFadeOneByOne_t : public EffAllTogetherSmoothly_t {
 private:
-    uint8_t IDs[LED_CNT];
+    uint8_t IDs[NPX1_CNT];
     Color_t IClrLo, IClrHi;
 public:
     void SetupAndStart(int32_t ThrLo, int32_t ThrHi);

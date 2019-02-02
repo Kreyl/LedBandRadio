@@ -12,13 +12,17 @@
 // Forever
 EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
 static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
-extern CmdUart_t Uart{&CmdUartParams};
+CmdUart_t Uart{&CmdUartParams};
 static void ITask();
 static void OnCmd(Shell_t *PShell);
 
+static const NeopixelParams_t LedParams(NPX1_SPI, NPX1_GPIO, NPX1_PIN, NPX1_AF, NPX1_DMA, NPX_DMA_MODE(NPX1_DMA_CHNL));
+Neopixels_t Leds(&LedParams);
+
 LedOnOff_t Led {LED_PIN};
-PinOutput_t LedWsEn {LED_WS_EN};
-//Color_t Clr(0, 255, 0, 0);
+PinOutput_t LedWsEn {NPX1_EN};
+#define START_CLR   (Color_t){63, 99, 255}
+Color_t Clr = START_CLR;
 
 #endif
 
@@ -44,25 +48,33 @@ int main(void) {
     Printf("\r%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk.PrintFreqs();
 
-    // Debug LED
-    Led.Init();
+    Led.Init(); // Debug LED
 
-//    if(Radio.Init() != retvOk) {
-//        for(int i=0; i<45; i++) {
-//            chThdSleepMilliseconds(135);
-//            Led.Off();
-//            chThdSleepMilliseconds(135);
-//            Led.On();
-//        }
-//    }
-//    else Led.Off();
+    if(Radio.Init() != retvOk) {
+        while(true) {
+            chThdSleepMilliseconds(135);
+            Led.On();
+            chThdSleepMilliseconds(135);
+            Led.Off();
+        }
+    }
+    else Led.On();
 
     // LEDs
-//    LedWsEn.Init();
-//    LedWsEn.SetLo();
-//    LedEffectsInit();
+    LedWsEn.Init();
+    LedWsEn.SetLo();
+    Leds.Init(NPX1_CNT);
+    LedEffectsInit();
 
-//    EffAllTogetherSequence.
+    EffAllTogetherSmoothly.SetupAndStart(Clr, 360);
+//    EffAllTogetherNow.SetupAndStart(Clr);
+
+//    while(true) {
+//        EffAllTogetherNow.SetupAndStart(clGreen);
+//        chThdSleepMilliseconds(207);
+//        EffAllTogetherNow.SetupAndStart(clBlue);
+//        chThdSleepMilliseconds(207);
+//    }
 
 //    EffFadeOneByOne.SetupIDs();
 //    EffAllTogetherSmoothly.SetupAndStart(clRGBWStars, 360);
@@ -70,7 +82,6 @@ int main(void) {
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0});
 //    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255});
 //    EffAllTogetherSequence.StartOrRestart(lsqStart);
-
 //    EvtMsg_t Msg(evtIdLedEnd);
 //    EffAllTogetherSequence.SetupSeqEndEvt(Msg);
 
@@ -85,7 +96,12 @@ void ITask() {
 //        Printf("Msg %u\r", Msg.ID);
         switch(Msg.ID) {
             case evtIdRadioCmd:
-                Printf("Btn: %d\r", Msg.Value);
+                if(Clr.DWord32 != (uint32_t)Msg.Value) {
+                    Clr.DWord32 = (uint32_t)Msg.Value;
+                    Clr.Print();
+                    PrintfEOL();
+                    EffAllTogetherSmoothly.SetupAndStart(Clr, 360);
+                }
                 break;
 
             case evtIdShellCmd:
@@ -106,8 +122,8 @@ void OnCmd(Shell_t *PShell) {
     if(PCmd->NameIs("Ping")) {
         PShell->Ack(retvOk);
     }
-
     else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
+    else if(PCmd->NameIs("mem")) PrintMemoryInfo();
 
 //    else if(PCmd->NameIs("RGB")) {
 //        Color_t FClr(0,0,0);

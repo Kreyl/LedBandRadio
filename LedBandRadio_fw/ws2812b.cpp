@@ -41,7 +41,7 @@ void Neopixels_t::Init(int32_t ALedCnt) {
         IBitBuf[TotalW32Cnt - i - 1] = 0;
     }
 
-//    ClrBuf.resize(LedCnt);
+    ClrBuf.resize(LedCnt);
 
     // ==== DMA ====
     dmaStreamAllocate     (Params->PDma, IRQ_PRIO_LOW, NpxDmaDone, (void*)this);
@@ -77,11 +77,11 @@ void Neopixels_t::SetCurrentColors() {
     uint32_t *p = IBitBuf + (RST_W16_CNT / 4); // First and last words are zero to form reset
     // Fill bit buffer
 //    systime_t LStart = chVTGetSystemTimeX();
-//    for(auto &Color : ClrBuf) {
-//        *p++ = ITable[Color.G];
-//        *p++ = ITable[Color.R];
-//        *p++ = ITable[Color.B];
-//    }
+    for(auto &Color : ClrBuf) {
+        *p++ = ITable[Color.G];
+        *p++ = ITable[Color.R];
+        *p++ = ITable[Color.B];
+    }
 //    PrintfI("t: %u\r", chVTGetSystemTimeX() - LStart);
     // Start transmission
     dmaStreamDisable(Params->PDma);

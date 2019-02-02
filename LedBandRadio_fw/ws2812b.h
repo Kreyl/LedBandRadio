@@ -24,7 +24,7 @@
 #include "uart.h"
 #include <vector>
 
-//typedef std::vector<Color_t> ColorBuf_t;
+typedef std::vector<Color_t> ColorBuf_t;
 
 // Do not touch
 #define SEQ_LEN_BITS        4 // 4 bits of SPI to produce 1 bit of LED data
@@ -80,7 +80,7 @@ public:
 //    }
     bool TransmitDone = false;
     ftVoidVoid OnTransmitEnd = nullptr;
-//    ColorBuf_t ClrBuf;
+    ColorBuf_t ClrBuf;
     // Methods
     void SetCurrentColors();
     void SetAll(Color_t Clr);
