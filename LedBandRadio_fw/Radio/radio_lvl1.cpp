@@ -43,7 +43,7 @@ static void rLvl1Thread(void *arg) {
         int8_t Rssi;
         rPkt_t PktRx;
         CC.Recalibrate();
-        uint8_t RxRslt = CC.Receive(270, &PktRx, &Rssi);   // Double pkt duration + TX sleep time
+        uint8_t RxRslt = CC.Receive(270, &PktRx, RPKT_LEN, &Rssi);
         if(RxRslt == retvOk) {
             Printf("Rssi=%d\r", Rssi);
             EvtQMain.SendNowOrExit(EvtMsg_t(evtIdRadioCmd, PktRx.DWord32));
