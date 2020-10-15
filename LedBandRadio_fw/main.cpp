@@ -5,7 +5,7 @@
 #include "led.h"
 #include "radio_lvl1.h"
 #include "ws2812b.h"
-#include "IntelLedEffs.h"
+#include "Effects.h"
 #include "Sequences.h"
 
 #if 1 // ======================== Variables and defines ========================
@@ -16,26 +16,33 @@ CmdUart_t Uart{&CmdUartParams};
 static void ITask();
 static void OnCmd(Shell_t *PShell);
 
-static const NeopixelParams_t LedParams(NPX1_SPI, NPX1_GPIO, NPX1_PIN, NPX1_AF, NPX1_DMA, NPX_DMA_MODE(NPX1_DMA_CHNL));
-Neopixels_t Leds(&LedParams);
+static const NeopixelParams_t NpxParams(NPX1_SPI, NPX1_GPIO, NPX1_PIN, NPX1_AF, NPX1_DMA, NPX_DMA_MODE(NPX1_DMA_CHNL));
+Neopixels_t Leds{&NpxParams, BAND_CNT, BAND_SETUPS};
 
 LedOnOff_t Led {LED_PIN};
 PinOutput_t LedWsEn {NPX1_EN};
-#define START_CLR   (Color_t){63, 99, 255}
-Color_t Clr = START_CLR;
 
 #endif
 
 int main(void) {
     // ==== Init Clock system ====
-    SetupVCore(vcore1V5);
+    SetupVCore(vcore1V8);
     Clk.EnablePrefetch();
-    Clk.SetupFlashLatency(8);
+//    Clk.SetupFlashLatency(8);
 //    Clk.SetupPLLDividers(pllMul4, pllDiv2);
 //    Clk.SetupPLLSrc(pllSrcHSE);
 //    Clk.SwitchToPLL();
-    Clk.SetupBusDividers(ahbDiv2, apbDiv1, apbDiv1);
-    Clk.SwitchToHSI();
+//    Clk.SetupBusDividers(ahbDiv2, apbDiv1, apbDiv1);
+//    Clk.SwitchToHSI();
+
+    // PLL fed by HSI
+    if(Clk.EnableHSI() == retvOk) {
+        Clk.SetupFlashLatency(16);
+        Clk.SetupPLLSrc(pllSrcHSI16);
+        Clk.SetupPLLDividers(pllMul4, pllDiv3);
+        Clk.SetupBusDividers(ahbDiv2, apbDiv1, apbDiv1);
+        Clk.SwitchToPLL();
+    }
     Clk.UpdateFreqValues();
 
     // === Init OS ===
@@ -63,10 +70,20 @@ int main(void) {
     // LEDs
     LedWsEn.Init();
     LedWsEn.SetLo();
-    Leds.Init(NPX1_CNT);
-    LedEffectsInit();
+    Leds.Init();
+//    Leds.SetAll(clGreen);
+//    Leds.SetAll(clRed);
+//    Leds.SetAll(clBlue);
+//    Leds.SetCurrentColors();
 
-    EffAllTogetherSmoothly.SetupAndStart(Clr, 360);
+    Eff::Init();
+//    Eff::StartFlaming();
+
+//    LedEffectsInit();
+//
+//    EffAllTogetherSmoothly.SetupAndStart(Clr, 360);
+
+
 //    EffAllTogetherNow.SetupAndStart(Clr);
 
 //    while(true) {
@@ -96,12 +113,12 @@ void ITask() {
 //        Printf("Msg %u\r", Msg.ID);
         switch(Msg.ID) {
             case evtIdRadioCmd:
-                if(Clr.DWord32 != (uint32_t)Msg.Value) {
-                    Clr.DWord32 = (uint32_t)Msg.Value;
-                    Clr.Print();
-                    PrintfEOL();
-                    EffAllTogetherSmoothly.SetupAndStart(Clr, 360);
-                }
+//                if(Clr.DWord32 != (uint32_t)Msg.Value) {
+//                    Clr.DWord32 = (uint32_t)Msg.Value;
+//                    Clr.Print();
+//                    PrintfEOL();
+//                    EffAllTogetherSmoothly.SetupAndStart(Clr, 360);
+//                }
                 break;
 
             case evtIdShellCmd:

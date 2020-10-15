@@ -7,11 +7,9 @@
 
 #pragma once
 
-#include <inttypes.h>
-
 // ==== General ====
 #define BOARD_NAME          "LedBandRadio v2"
-#define APP_NAME            "Stone2Color"
+#define APP_NAME            "StoneOfFlame"
 
 // MCU type as defined in the ST header.
 #define STM32L151xB
@@ -19,14 +17,24 @@
 // Freq of external crystal if any. Leave it here even if not used.
 #define CRYSTAL_FREQ_HZ         12000000
 
-#define SYS_TIM_CLK             (Clk.APB1FreqHz)
+// OS timer settings
+#define STM32_ST_IRQ_PRIORITY   2
+#define STM32_ST_USE_TIMER      2
+#define STM32_TIMCLK1           (Clk.APB1FreqHz)
 
 #define SIMPLESENSORS_ENABLED   FALSE
-#define BUTTONS_ENABLED         FALSE
 #define ADC_REQUIRED            FALSE
 #define I2C1_ENABLED            FALSE
 #define I2C_USE_SEMAPHORE       FALSE
 #define INDIVIDUAL_EXTI_IRQ_REQUIRED    FALSE
+
+// LEDs config: BandCnt; {LedCnt1, LedCnt2, LedCnt3...}
+#define BAND_CNT        3
+#define BAND_SETUPS     ((const BandSetup_t[]){\
+    {17, dirForward}, \
+    {17, dirBackward}, \
+    {16, dirForward}, \
+    })
 
 #if 1 // ========================== GPIO =======================================
 // PortMinTim_t: GPIO, Pin, Tim, TimChnl, invInverted, omPushPull, TopValue
@@ -76,11 +84,11 @@
 // ==== Uart ====
 #define UART_DMA_TX_MODE(Chnl) (STM32_DMA_CR_CHSEL(Chnl) | DMA_PRIORITY_LOW | STM32_DMA_CR_MSIZE_BYTE | STM32_DMA_CR_PSIZE_BYTE | STM32_DMA_CR_MINC | STM32_DMA_CR_DIR_M2P | STM32_DMA_CR_TCIE)
 #define UART_DMA_RX_MODE(Chnl) (STM32_DMA_CR_CHSEL(Chnl) | DMA_PRIORITY_MEDIUM | STM32_DMA_CR_MSIZE_BYTE | STM32_DMA_CR_PSIZE_BYTE | STM32_DMA_CR_MINC | STM32_DMA_CR_DIR_P2M | STM32_DMA_CR_CIRC)
-#define UART_DMA_TX     STM32_DMA1_STREAM7
-#define UART_DMA_RX     STM32_DMA1_STREAM6
+#define UART_DMA_TX     STM32_DMA_STREAM_ID(1, 7)
+#define UART_DMA_RX     STM32_DMA_STREAM_ID(1, 6)
 #define UART_DMA_CHNL   0   // Dummy
 
-#define NPX1_DMA        STM32_DMA1_STREAM5  // SPI2 TX
+#define NPX1_DMA        STM32_DMA_STREAM_ID(1, 5)  // SPI2 TX
 #define NPX1_DMA_CHNL   0 // dummy
 
 // ==== I2C1 ====
@@ -106,10 +114,12 @@
 #define UART_TXBUF_SZ   256
 #define UART_RXBUF_SZ   99
 
+#define CMD_UART        USART2
+
 #define UARTS_CNT       1
 
 #define CMD_UART_PARAMS \
-    USART2, UART_GPIO, UART_TX_PIN, UART_GPIO, UART_RX_PIN, \
+    CMD_UART, UART_GPIO, UART_TX_PIN, UART_GPIO, UART_RX_PIN, \
     UART_DMA_TX, UART_DMA_RX, UART_DMA_TX_MODE(UART_DMA_CHNL), UART_DMA_RX_MODE(UART_DMA_CHNL)
 
 #endif

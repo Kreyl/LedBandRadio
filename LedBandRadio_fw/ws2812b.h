@@ -1,40 +1,71 @@
-/*
- * ws2812b.h
- *
- *  Created on: 05 апр. 2014 г.
- *      Author: Kreyl
- */
-
 #pragma once
+
+
 
 /*
  * ========== WS2812 control module ==========
  * Only basic command "SetCurrentColors" is implemented, all other is up to
  * higher level software.
- * SPI input frequency should be 8 MHz, which results in 4MHz bitrate =>
- * 250nS per bit. Then, LED's 0 is 1000 (250 + 750), LED's 1 is 1110 (750 + 250).
- * Originally, (400 + 850) +- 150 each.
+ * There are different timings for V2 and V5. Wir verachten sie.
  */
+#define WS2812B_V2    TRUE
+//#define WS2812B_V5      TRUE
 
+/*
+ * WS2812 V2 requires timings, ns: (400 + 850) +- 150 each.
+ *
+ * SPI bitrate must be 2500kHz => 400nS per bit.
+ * Then, LED's 0 is 100 (400 + 800), LED's 1 is 110 (800 + 400).
+ * Reset must be:
+ *    WS2812: 50uS => 125bit => ~16 bytes
+ *    WS2813: 300uS => 750bit => 94 bytes
+ *
+ * WS2812 V5 requires timings, ns:
+ * 0 is [220;380]+[580;1000]
+ * 1 is [580;1000]+[580;1000]
+ * SPI bitrate must be 3000 kHz => 333nS per bit.
+ * Then, LED's 0 is 100 (333+666), LED's 1 is 1100 (666+666).
+ * To simplify BitBuffer construction, using 0 as 1000 (333+999) and 1 as 1100,
+ * thus 1 LED byte is 4 real bytes.
+ */
 
 #include "ch.h"
 #include "hal.h"
 #include "kl_lib.h"
 #include "color.h"
 #include "uart.h"
+#include "board.h"
 #include <vector>
 
 typedef std::vector<Color_t> ColorBuf_t;
 
-// Do not touch
-#define SEQ_LEN_BITS        4 // 4 bits of SPI to produce 1 bit of LED data
-// Total zero words before and after data to produce reset: 16 * 4us = 64us (50us required)
-#define RST_W16_CNT         16 // Multiply of 4 is required
+// SPI Buffer (no tuning required)
+#if WS2812B_V2
+#define NPX_SPI_BITRATE         2500000
+#define NPX_SPI_BITNUMBER       bitn8
+#define NPX_BYTES_PER_BYTE      3 // 3 bits of SPI to produce 1 bit of LED data
+#define NPX_RST_BYTE_CNT        100
+//#define DATA_BIT_CNT(LedCnt)    (LedCnt * 3 * 8 * NPX_SEQ_LEN_BITS) // Each led has 3 channels 8 bit each
+#define NPX_DATA_BYTE_CNT(LedCnt)   ((LedCnt) * 3 * NPX_BYTES_PER_BYTE)
+#define NPX_TOTAL_BYTE_CNT(LedCnt)  (NPX_DATA_BYTE_CNT(LedCnt) + NPX_RST_BYTE_CNT)
 
-// SPI16 Buffer (no tuning required)
-#define DATA_BIT_CNT(Cnt)   (Cnt * 3 * 8 * SEQ_LEN_BITS) // Each led has 3 channels 8 bit each
-#define DATA_W16_CNT(Cnt)   ((DATA_BIT_CNT(Cnt) + 15) / 16)
-#define TOTAL_W16_CNT(Cnt)  (DATA_W16_CNT(Cnt) + RST_W16_CNT)
+#define NPX_DMA_MODE(Chnl) \
+                        (STM32_DMA_CR_CHSEL(Chnl) \
+                        | DMA_PRIORITY_HIGH \
+                        | STM32_DMA_CR_MSIZE_BYTE \
+                        | STM32_DMA_CR_PSIZE_BYTE \
+                        | STM32_DMA_CR_MINC     /* Memory pointer increase */ \
+                        | STM32_DMA_CR_DIR_M2P)  /* Direction is memory to peripheral */ \
+                        | STM32_DMA_CR_TCIE
+
+#else // WS2812B_V5
+#define NPX_SPI_BITRATE         3000000
+#define NPX_SPI_BITNUMBER       bitn16
+#define NPX_BYTES_PER_BYTE      4 // 2 bits are 1 byte, 8 bits are 4 bytes
+#define NPX_RST_BYTE_CNT        108
+#define NPX_DATA_BYTE_CNT(LedCnt)   ((LedCnt) * 3 * NPX_BYTES_PER_BYTE)
+#define NPX_TOTAL_BYTE_CNT(LedCnt)  (NPX_DATA_BYTE_CNT(LedCnt) + NPX_RST_BYTE_CNT)
+#define NPX_WORD_CNT(LedCnt)        ((NPX_TOTAL_BYTE_CNT(LedCnt) + 1) / 2)
 
 #define NPX_DMA_MODE(Chnl) \
                         (STM32_DMA_CR_CHSEL(Chnl) \
@@ -44,6 +75,17 @@ typedef std::vector<Color_t> ColorBuf_t;
                         | STM32_DMA_CR_MINC     /* Memory pointer increase */ \
                         | STM32_DMA_CR_DIR_M2P)  /* Direction is memory to peripheral */ \
                         | STM32_DMA_CR_TCIE
+#endif
+
+
+void NpxPrintTable();
+
+// Band setup
+enum BandDirection_t {dirForward, dirBackward};
+struct BandSetup_t {
+    int32_t Length;
+    BandDirection_t Dir;
+};
 
 struct NeopixelParams_t {
     // SPI
@@ -52,37 +94,49 @@ struct NeopixelParams_t {
     uint16_t Pin;
     AlterFunc_t Af;
     // DMA
-    const stm32_dma_stream_t *PDma;
+    uint32_t DmaID;
     uint32_t DmaMode;
     NeopixelParams_t(SPI_TypeDef *ASpi,
             GPIO_TypeDef *APGpio, uint16_t APin, AlterFunc_t AAf,
-            const stm32_dma_stream_t *APDma, uint32_t ADmaMode) :
+            uint32_t ADmaID, uint32_t ADmaMode) :
                 ISpi(ASpi), PGpio(APGpio), Pin(APin), Af(AAf),
-                PDma(APDma), DmaMode(ADmaMode) {}
+                DmaID(ADmaID), DmaMode(ADmaMode) {}
 };
 
 
 class Neopixels_t {
 private:
-    const NeopixelParams_t *Params;
+#if WS2812B_V2
+    uint32_t IBitBufSz = 0;
+    uint8_t *IBitBuf = nullptr;
+#else
+    uint32_t IBitBufWordCnt = 0;
     uint32_t *IBitBuf = nullptr;
+#endif
+    const NeopixelParams_t *Params;
+    const stm32_dma_stream_t *PDma = nullptr;
 public:
-    Neopixels_t(const NeopixelParams_t *APParams) : Params(APParams) {}
-
-    int32_t LedCnt = 0;
-
-    void Init(int32_t ALedCnt);
-//    bool AreOff() {
-//        for(uint8_t i=0; i<LedCnt; i++) {
-//            if(ClrBuf[i] != clBlack) return false;
-//        }
-//        return true;
-//    }
+    int32_t LedCntTotal = 0;
+    // Band setup
+    const int32_t BandCnt;
+    const BandSetup_t *BandSetup;
     bool TransmitDone = false;
     ftVoidVoid OnTransmitEnd = nullptr;
-    ColorBuf_t ClrBuf;
     // Methods
+    Neopixels_t(const NeopixelParams_t *APParams,
+            const uint32_t ABandCnt, const BandSetup_t *PBandSetup) :
+                Params(APParams), BandCnt(ABandCnt), BandSetup(PBandSetup) { }
     void SetCurrentColors();
-    void SetAll(Color_t Clr);
     void OnDmaDone();
+    ColorBuf_t ClrBuf;
+    void Init();
+    void SetAll(Color_t Clr) {
+        for(auto &IClr : ClrBuf) IClr = Clr;
+    }
+    bool AreOff() {
+        for(auto &IClr : ClrBuf) {
+            if(IClr != clBlack) return false;
+        }
+        return true;
+    }
 };
