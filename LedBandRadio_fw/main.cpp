@@ -21,7 +21,7 @@ Neopixels_t Leds{&NpxParams, BAND_CNT, BAND_SETUPS};
 
 LedOnOff_t Led {LED_PIN};
 PinOutput_t LedWsEn {NPX1_EN};
-
+State_t State;
 #endif
 
 int main(void) {
@@ -71,36 +71,9 @@ int main(void) {
     LedWsEn.Init();
     LedWsEn.SetLo();
     Leds.Init();
-//    Leds.SetAll(clGreen);
-//    Leds.SetAll(clRed);
-//    Leds.SetAll(clBlue);
-//    Leds.SetCurrentColors();
 
     Eff::Init();
-//    Eff::StartFlaming();
-
-//    LedEffectsInit();
-//
-//    EffAllTogetherSmoothly.SetupAndStart(Clr, 360);
-
-
-//    EffAllTogetherNow.SetupAndStart(Clr);
-
-//    while(true) {
-//        EffAllTogetherNow.SetupAndStart(clGreen);
-//        chThdSleepMilliseconds(207);
-//        EffAllTogetherNow.SetupAndStart(clBlue);
-//        chThdSleepMilliseconds(207);
-//    }
-
-//    EffFadeOneByOne.SetupIDs();
-//    EffAllTogetherSmoothly.SetupAndStart(clRGBWStars, 360);
-//    EffAllTogetherNow.SetupAndStart((Color_t){255,0,0});
-//    EffAllTogetherNow.SetupAndStart((Color_t){0,255,0});
-//    EffAllTogetherNow.SetupAndStart((Color_t){0,0,255});
-//    EffAllTogetherSequence.StartOrRestart(lsqStart);
-//    EvtMsg_t Msg(evtIdLedEnd);
-//    EffAllTogetherSequence.SetupSeqEndEvt(Msg);
+    Eff::StartFlaming();
 
     // Main cycle
     ITask();
@@ -141,6 +114,21 @@ void OnCmd(Shell_t *PShell) {
     }
     else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
     else if(PCmd->NameIs("mem")) PrintMemoryInfo();
+
+    else if(PCmd->NameIs("1")) {
+
+        PShell->Ack(retvOk);
+    }
+
+    else if(PCmd->NameIs("2")) {
+
+        PShell->Ack(retvOk);
+    }
+
+    else if(PCmd->NameIs("3")) {
+        Eff::DoFlash();
+        PShell->Ack(retvOk);
+    }
 
 //    else if(PCmd->NameIs("RGB")) {
 //        Color_t FClr(0,0,0);

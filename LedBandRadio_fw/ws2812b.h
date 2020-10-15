@@ -147,6 +147,9 @@ public:
     void SetAll(Color_t Clr) {
         for(auto &IClr : ClrBuf) IClr = Clr;
     }
+    void MixAllwWeight(Color_t Clr, uint32_t Weight) {
+        for(auto &IClr : ClrBuf) IClr.MixwWeight(Clr, Weight);
+    }
     bool AreOff() {
         for(auto &IClr : ClrBuf) {
             if(IClr != clBlack) return false;

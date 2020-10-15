@@ -16,15 +16,14 @@
 extern Neopixels_t Leds;
 
 #define BACK_CLR    clBlack
+#define SMOOTH_VAR  180
 
 #if 1 // ============================= Flare ===================================
 static void IFlareTmrMoveCallback(void *p);
 
-//
 class Flare_t {
 private:
     virtual_timer_t ITmrMove;
-
 public:
     Flare_t(int32_t BandIndx) : BandIndx(BandIndx) {}
     enum State_t { flstIdle, flstMoving } State = flstIdle;
@@ -34,16 +33,15 @@ public:
     uint32_t BandIndx = 0;
     ColorHSV_t ClrHSV = hsvRed;
 
-
     void Start() {
         chSysLock();
         chVTResetI(&ITmrMove);
         chSysUnlock();
         CurrX = 0;
         State = flstMoving;
-        Len = Random::Generate(3, 8);
+        Len = Random::Generate(3, 10);
         int32_t h = Random::Generate(-12, 22);
-        MoveTick_ms = Random::Generate(27, 108);
+        MoveTick_ms = Random::Generate(27, 81);
         if(h < 0) h += 360L;
         ClrHSV.H = h;
         chSysLock();
@@ -57,7 +55,6 @@ public:
         }
     }
 
-
     // Inner use
     void OnMoveTickI() {
         if((CurrX - Len) < Leds.BandSetup[BandIndx].Length) {
@@ -66,7 +63,6 @@ public:
         }
         else State = flstIdle;
     }
-
 };
 
 static void IFlareTmrMoveCallback(void *p) {
@@ -76,9 +72,83 @@ static void IFlareTmrMoveCallback(void *p) {
 }
 
 static Flare_t Flares[] = { 0,1,2,3,4,5,6,7,8 };
-
 #endif
 
+#if 1 // ========================== Total Fill =================================
+static void ITotalFillTmrCallback(void *p);
+
+class TotalFill_t {
+private:
+    int32_t Brt = 0;
+    virtual_timer_t ITmr;
+    void StartTimerI() { chVTSetI(&ITmr, TIME_MS2I(ClrCalcDelay(Brt, 180)), ITotalFillTmrCallback, this); }
+    void StartTimerI(uint32_t Delay_ms) { chVTSetI(&ITmr, TIME_MS2I(Delay_ms), ITotalFillTmrCallback, this); }
+    void StartTimer() {
+        chSysLock();
+        StartTimerI();
+        chSysUnlock();
+    }
+    enum {tfstIdle, tfstFadeInAndWait, tfstWaitAndFadeOut, tfstFadeInAndStop, tfstFadeOut} State = tfstIdle;
+    Color_t Clr;
+public:
+    void DoFlash() {
+        State = tfstFadeInAndWait;
+        Brt = 0;
+        Clr = clRed;
+        StartTimer();
+    }
+
+    void Draw() {
+        if(State == tfstIdle) return;
+        Clr.Brt = Brt;
+        Leds.MixAllwWeight(Clr, Brt);
+    }
+
+    void OnTickI() {
+        switch(State) {
+            case tfstIdle: return; break;
+
+            case tfstFadeInAndWait:
+                if(Brt >= 255) {
+                    State = tfstWaitAndFadeOut;
+                    StartTimerI(450);
+                }
+                else {
+                    Brt++;
+                    StartTimerI();
+                }
+                break;
+
+            case tfstFadeInAndStop:
+                if(Brt >= 255) State = tfstIdle;
+                else {
+                    Brt++;
+                    StartTimerI();
+                }
+                break;
+
+            case tfstWaitAndFadeOut: // End of delay
+                State = tfstFadeOut;
+                StartTimerI();
+                break;
+
+            case tfstFadeOut:
+                if(Brt <= 0) State = tfstIdle;
+                else {
+                    Brt--;
+                    StartTimerI();
+                }
+                break;
+        } // switch
+    }
+} TotalFill;
+
+static void ITotalFillTmrCallback(void *p) {
+    chSysLockFromISR();
+    ((TotalFill_t*)p)->OnTickI();
+    chSysUnlockFromISR();
+}
+#endif
 
 // Thread
 static THD_WORKING_AREA(waNpxThread, 512);
@@ -87,15 +157,19 @@ static void NpxThread(void *arg) {
     chRegSetThreadName("Npx");
     while(true) {
         chThdSleepMilliseconds(9);
-        // Reset colors
-        Leds.SetAll(BACK_CLR);
-
-        // ==== Draw flares ====
+        Leds.SetAll(Color_t{27, 27, 0}); // Reset colors
+        // Draw Foot Ring
+        for(int i=0; i<BAND_CNT; i++) {
+            Leds.MixIntoBand(0, i, hsvRed);
+        }
+        // Draw flares
         for(Flare_t &Flare : Flares) {
             if(Flare.State == Flare_t::flstMoving) Flare.Draw();
             else Flare.Start();
-
         }
+
+        // TotalFill
+        TotalFill.Draw();
 
         // Show it
         Leds.SetCurrentColors();
@@ -104,18 +178,21 @@ static void NpxThread(void *arg) {
 
 namespace Eff {
 void Init() {
-//    for(uint32_t i=0; i<FLASH_CNT; i++) {
-//        chSysLock();
-//        FlashBuf[i].GenerateI(i * 1107 + 9);
-//        chSysUnlock();
-//    }
-
     chThdCreateStatic(waNpxThread, sizeof(waNpxThread), NORMALPRIO, (tfunc_t)NpxThread, nullptr);
 }
 
-void SetColor(Color_t AClr) {
-//    for(uint32_t i=0; i<FLASH_CNT; i++) FlashBuf[i].Clr = AClr;
+void EnterOff() {
+//    OnOffLayer.FadeOut();
 }
+
+void StartFlaming() {
+    State = staFire;
+}
+
+void DoFlash() {
+    TotalFill.DoFlash();
+}
+
 
 //void FadeIn()  { OnOffLayer.FadeIn();  }
 //void FadeOut() { OnOffLayer.FadeOut(); }

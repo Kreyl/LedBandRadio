@@ -9,13 +9,15 @@
 
 #include "color.h"
 
+enum State_t { staOff, staFire, staFlash, staWhite };
+extern State_t State;
+
 namespace Eff {
 void Init();
 
-//const
+void EnterOff();
 void StartFlaming();
-
-void SetColor(Color_t AClr);
+void DoFlash();
 
 void FadeIn();
 void FadeOut();
