@@ -5,6 +5,9 @@ void NpxDmaDone(void *p, uint32_t flags) {
 }
 
 void Neopixels_t::Init() {
+    // Total len
+    for(int32_t n=0; n < BandCnt; n++) LedCntTotal += BandSetup[n].Length;
+
     // GPIO and DMA
     PinSetupAlterFunc(Params->PGpio, Params->Pin, omPushPull, pudNone, Params->Af);
     Params->ISpi.Setup(boMSB, cpolIdleLow, cphaFirstEdge, NPX_SPI_BITRATE, NPX_SPI_BITNUMBER);
@@ -12,7 +15,6 @@ void Neopixels_t::Init() {
     Params->ISpi.EnableTxDma();
 
     // Allocate memory
-    for(int32_t i=0; i<BandCnt; i++) LedCntTotal += BandSetup[i].Length;
     Printf("LedCnt: %u\r", LedCntTotal);
 #if WS2812B_V2
     IBitBufSz = NPX_TOTAL_BYTE_CNT(LedCntTotal);

@@ -83,6 +83,7 @@ void NpxPrintTable();
 // Band setup
 enum BandDirection_t {dirForward, dirBackward};
 struct BandSetup_t {
+    int32_t StartIndx;
     int32_t Length;
     BandDirection_t Dir;
 };
@@ -126,6 +127,19 @@ public:
     Neopixels_t(const NeopixelParams_t *APParams,
             const uint32_t ABandCnt, const BandSetup_t *PBandSetup) :
                 Params(APParams), BandCnt(ABandCnt), BandSetup(PBandSetup) { }
+
+    // 0 <= x < BandLen
+    void MixIntoBand(int32_t x, int32_t BandIndx, ColorHSV_t ClrHSV) {
+        if(x < 0) return;
+        int32_t BandLen = BandSetup[BandIndx].Length;
+        if(x >= BandLen) return;
+        if(BandSetup[BandIndx].Dir == dirBackward) x = (BandLen - 1) - x;
+        x += BandSetup[BandIndx].StartIndx;
+        Color_t Clr = ClrHSV.ToRGB();
+        Clr.Brt = 100;
+        ClrBuf[x].MixWith(Clr);
+    }
+
     void SetCurrentColors();
     void OnDmaDone();
     ColorBuf_t ClrBuf;

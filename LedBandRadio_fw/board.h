@@ -29,11 +29,17 @@
 #define INDIVIDUAL_EXTI_IRQ_REQUIRED    FALSE
 
 // LEDs config: BandCnt; {LedCnt1, LedCnt2, LedCnt3...}
-#define BAND_CNT        3
+#define BAND_CNT        9
 #define BAND_SETUPS     ((const BandSetup_t[]){\
-    {17, dirForward}, \
-    {17, dirBackward}, \
-    {16, dirForward}, \
+    {0,   17, dirForward}, \
+    {17,  17, dirBackward}, \
+    {34,  16, dirForward}, \
+    {50,  13, dirBackward}, \
+    {63,  16, dirForward}, \
+    {79,  10, dirBackward}, \
+    {89,  16, dirForward}, \
+    {105, 16, dirBackward}, \
+    {121, 11, dirForward}, \
     })
 
 #if 1 // ========================== GPIO =======================================
