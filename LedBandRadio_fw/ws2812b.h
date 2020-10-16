@@ -150,6 +150,15 @@ public:
     void MixAllwWeight(Color_t Clr, uint32_t Weight) {
         for(auto &IClr : ClrBuf) IClr.MixwWeight(Clr, Weight);
     }
+    // Brt = [0; 255]
+    void SetBrightness(uint32_t Brt) {
+        ColorHSV_t ClrH;
+        for(auto &IClr : ClrBuf) {
+            ClrH.FromRGB(IClr);
+            ClrH.V = (ClrH.V * Brt) / 255;
+            IClr.FromHSV(ClrH.H, ClrH.S, ClrH.V);
+        }
+    }
     bool AreOff() {
         for(auto &IClr : ClrBuf) {
             if(IClr != clBlack) return false;

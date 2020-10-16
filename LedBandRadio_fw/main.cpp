@@ -75,6 +75,7 @@ int main(void) {
 
     Eff::Init();
     Eff::StartFlaming();
+    Eff::FadeIn();
 
     // Main cycle
     ITask();
@@ -86,13 +87,8 @@ void ITask() {
         EvtMsg_t Msg = EvtQMain.Fetch(TIME_INFINITE);
 //        Printf("Msg %u\r", Msg.ID);
         switch(Msg.ID) {
-            case evtIdRadioCmd:
-//                if(Clr.DWord32 != (uint32_t)Msg.Value) {
-//                    Clr.DWord32 = (uint32_t)Msg.Value;
-//                    Clr.Print();
-//                    PrintfEOL();
-//                    EffAllTogetherSmoothly.SetupAndStart(Clr, 360);
-//                }
+            case evtIdLedsDone:
+                LedWsEn.SetHi();
                 break;
 
             case evtIdShellCmd:
@@ -116,8 +112,14 @@ void OnCmd(Shell_t *PShell) {
     else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
     else if(PCmd->NameIs("mem")) PrintMemoryInfo();
 
-    else if(PCmd->NameIs("1")) {
-
+    else if(PCmd->NameIs("On")) {
+        LedWsEn.SetLo();
+        Eff::FadeIn();
+        Eff::StartFlaming();
+        PShell->Ack(retvOk);
+    }
+    else if(PCmd->NameIs("Off")) {
+        Eff::FadeOut();
         PShell->Ack(retvOk);
     }
 

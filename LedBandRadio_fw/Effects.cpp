@@ -174,6 +174,65 @@ static void ITotalFillTmrCallback(void *p) {
 }
 #endif
 
+#if 1 // ============================ On-Off Layer =============================
+void OnOffTmrCallback(void *p);
+
+class OnOffLayer_t {
+private:
+    enum PhaseState_t {stIdle, stFadingOut, stFadingIn} PhaseState = stIdle;
+    int32_t Brt = 0;
+    virtual_timer_t ITmr;
+    void StartTimerI() { chVTSetI(&ITmr, TIME_MS2I(ClrCalcDelay(Brt, 360)), OnOffTmrCallback, nullptr); }
+public:
+    void FadeIn() {
+        PhaseState = stFadingIn;
+        chSysLock();
+        StartTimerI();
+        chSysUnlock();
+    }
+
+    void FadeOut() {
+        PhaseState = stFadingOut;
+        chSysLock();
+        StartTimerI();
+        chSysUnlock();
+    }
+
+    void Draw() { Leds.SetBrightness(Brt); }
+
+    void TmrTickI() {
+        switch(PhaseState) {
+            case stFadingIn:
+                if(Brt >= 255) PhaseState = stIdle;
+                else {
+                    Brt++;
+                    StartTimerI();
+                }
+                break;
+
+            case stFadingOut:
+                if(Brt <= 0) {
+                    PhaseState = stIdle;
+                    EvtQMain.SendNowOrExitI(EvtMsg_t(evtIdLedsDone));
+                }
+                else {
+                    Brt--;
+                    StartTimerI();
+                }
+                break;
+            default: break;
+        }
+    }
+} OnOffLayer;
+
+void OnOffTmrCallback(void *p) {
+    chSysLockFromISR();
+    OnOffLayer.TmrTickI();
+    chSysUnlockFromISR();
+}
+#endif
+
+
 // Thread
 static THD_WORKING_AREA(waNpxThread, 512);
 __noreturn
@@ -182,11 +241,12 @@ static void NpxThread(void *arg) {
     while(true) {
         chThdSleepMilliseconds(9);
 //        uint32_t Start = chVTGetSystemTimeX();
-        Leds.SetAll(Color_t{27, 27, 0}); // Reset colors
+        // Reset colors
+        Leds.SetAll(Color_t{27, 27, 0});
+
         // Draw Foot Ring
-        for(int i=0; i<BAND_CNT; i++) {
-            Leds.MixIntoBand(0, i, hsvRed);
-        }
+        for(int i=0; i<BAND_CNT; i++) Leds.MixIntoBand(0, i, hsvRed);
+
         // Draw flares
         for(Flare_t &Flare : Flares) {
             if(Flare.State == Flare_t::flstMoving) Flare.Draw();
@@ -195,6 +255,9 @@ static void NpxThread(void *arg) {
 
         // TotalFill
         TotalFill.Draw();
+
+        // OnOff
+        OnOffLayer.Draw();
 
         // Show it
         Leds.SetCurrentColors();
@@ -224,8 +287,7 @@ void BeWhite() {
     TotalFill.BeWhite();
 }
 
-
-//void FadeIn()  { OnOffLayer.FadeIn();  }
-//void FadeOut() { OnOffLayer.FadeOut(); }
+void FadeIn()  { OnOffLayer.FadeIn();  }
+void FadeOut() { OnOffLayer.FadeOut(); }
 
 } // namespace

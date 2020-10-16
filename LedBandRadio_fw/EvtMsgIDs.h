@@ -19,6 +19,5 @@ enum EvtMsgId_t {
     evtIdRadioCmd,
     evtIdCheckRxTable,
 
-    evtIdFadeInDone,
-    evtIdFadeOutDone
+    evtIdLedsDone,
 };
