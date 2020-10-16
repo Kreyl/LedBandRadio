@@ -21,8 +21,6 @@ Neopixels_t Leds{&NpxParams, BAND_CNT, BAND_SETUPS};
 
 LedOnOff_t Led {LED_PIN};
 PinOutput_t LedWsEn {NPX1_EN};
-enum State_t { staOff, staFire, staWhite };
-State_t State = staFire;
 #endif
 
 int main(void) {
@@ -120,18 +118,6 @@ void OnCmd(Shell_t *PShell) {
     }
     else if(PCmd->NameIs("Off")) {
         Eff::FadeOut();
-        PShell->Ack(retvOk);
-    }
-
-    else if(PCmd->NameIs("2")) {
-        if(State == staFire) {
-            State = staWhite;
-            Eff::BeWhite();
-        }
-        else {
-            State = staFire;
-            Eff::StartFlaming();
-        }
         PShell->Ack(retvOk);
     }
 

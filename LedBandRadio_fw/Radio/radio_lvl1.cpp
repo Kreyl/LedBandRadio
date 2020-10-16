@@ -37,11 +37,7 @@ rLevel1_t Radio;
 extern PinOutput_t LedWsEn;
 extern LedOnOff_t Led;
 
-//void RxCallback() {
-//    if(CC.ReadFIFO(&Radio.PktRx, &Radio.PktRx.Rssi, RPKT_LEN) == retvOk) {  // if pkt successfully received
-//        Radio.RMsgQ.SendNowOrExitI(RMsg_t(rmsgPktRx));
-//    }
-//}
+enum {staOff, staFire, staWhite} State = staFire;
 
 #if 1 // ================================ Task =================================
 static THD_WORKING_AREA(warLvl1Thread, 256);
@@ -60,23 +56,37 @@ void rLevel1_t::ITask() {
             Printf("Rx: %u; RSSI: %d\r", PktRx.RCmd, PktRx.Rssi);
             bool TxOk = true;
             switch(PktRx.RCmd) {
-                case 9: // On
-                    LedWsEn.SetLo();
-                    Eff::FadeIn();
-                    Eff::StartFlaming();
+                case 9: // On/off
+                    if(State == staOff) {
+                        State = staFire;
+                        LedWsEn.SetLo();
+                        Eff::FadeIn();
+                        Eff::StartFlaming();
+                    }
+                    else {
+                        State = staOff;
+                        Eff::FadeOut();
+                    }
                     break;
-                case 18: // Off
-                    Eff::FadeOut();
-                    break;
+
                 case 27: // Be White
-                    Eff::BeWhite();
+                    if(State == staFire) {
+                        State = staWhite;
+                        Eff::BeWhite();
+                    }
                     break;
+
                 case 36: // BeFire
-                    Eff::StartFlaming();
+                    if(State == staWhite) {
+                        State = staFire;
+                        Eff::StartFlaming();
+                    }
                     break;
+
                 case 45: // Flash
-                    Eff::DoFlash();
+                    if(State == staFire) Eff::DoFlash();
                     break;
+
                 default:
                     TxOk = false;
                     break;
