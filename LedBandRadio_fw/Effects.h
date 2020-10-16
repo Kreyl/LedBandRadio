@@ -12,7 +12,6 @@
 namespace Eff {
 void Init();
 
-void EnterOff();
 void StartFlaming();
 void DoFlash();
 void BeWhite();

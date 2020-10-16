@@ -93,8 +93,10 @@ private:
         chSysUnlock();
     }
     uint32_t SmoothVar;
-    enum {tfstIdle, tfstFadeInAndWait, tfstWaitAndFadeOut, tfstFadeInAndHold, tfstFadeOut, tfstHold} State = tfstIdle;
+    enum {tfstIdle, tfstWaitAndFadeOut, tfstFadeInAndHold, tfstFadeOut, tfstHold} State = tfstIdle;
     Color_t Clr;
+    // Flicker when Hold
+    Color_t HoldClrTarget;
 public:
     void StartFlaming() {
         Printf("%S\r", __FUNCTION__);
@@ -128,42 +130,35 @@ public:
 
     void OnTickI() {
         switch(State) {
-            case tfstIdle:
-            case tfstHold:
-                return; break;
-
-            case tfstFadeInAndWait:
-                if(Brt >= 255) {
-                    State = tfstWaitAndFadeOut;
-                    StartTimerI(450);
-                }
-                else {
-                    Brt++;
-                    StartTimerI();
-                }
-                break;
+            case tfstIdle: return; break;
 
             case tfstFadeInAndHold:
-                if(Brt >= 255) State = tfstHold;
-                else {
-                    Brt++;
-                    StartTimerI();
+                if(Brt >= 255) {
+                    State = tfstHold;
+                    HoldClrTarget = Clr;
                 }
+                else Brt++;
                 break;
 
             case tfstWaitAndFadeOut: // End of delay
                 State = tfstFadeOut;
-                StartTimerI();
                 break;
 
             case tfstFadeOut:
                 if(Brt <= 0) State = tfstIdle;
+                else Brt--;
+                break;
+
+            case tfstHold:
+                if(HoldClrTarget == Clr) {
+                    HoldClrTarget.FromHSV(Random::Generate(107, 153), 100, 100);
+                }
                 else {
-                    Brt--;
-                    StartTimerI();
+                    Clr.Adjust(HoldClrTarget);
                 }
                 break;
         } // switch
+        StartTimerI();
     }
 } TotalFill;
 
@@ -271,21 +266,9 @@ void Init() {
     chThdCreateStatic(waNpxThread, sizeof(waNpxThread), NORMALPRIO, (tfunc_t)NpxThread, nullptr);
 }
 
-void EnterOff() {
-//    OnOffLayer.FadeOut();
-}
-
-void StartFlaming() {
-    TotalFill.StartFlaming();
-}
-
-void DoFlash() {
-    TotalFill.DoFlash();
-}
-
-void BeWhite() {
-    TotalFill.BeWhite();
-}
+void StartFlaming() { TotalFill.StartFlaming(); }
+void DoFlash()      { TotalFill.DoFlash(); }
+void BeWhite()      { TotalFill.BeWhite(); }
 
 void FadeIn()  { OnOffLayer.FadeIn();  }
 void FadeOut() { OnOffLayer.FadeOut(); }
