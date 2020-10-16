@@ -16,7 +16,6 @@
 extern Neopixels_t Leds;
 
 #define BACK_CLR    clBlack
-#define SMOOTH_VAR  180
 
 #if 1 // ============================= Flare ===================================
 static void IFlareTmrMoveCallback(void *p);
@@ -81,32 +80,57 @@ class TotalFill_t {
 private:
     int32_t Brt = 0;
     virtual_timer_t ITmr;
-    void StartTimerI() { chVTSetI(&ITmr, TIME_MS2I(ClrCalcDelay(Brt, 180)), ITotalFillTmrCallback, this); }
+    void StartTimerI() { chVTSetI(&ITmr, TIME_MS2I(ClrCalcDelay(Brt, SmoothVar)), ITotalFillTmrCallback, this); }
     void StartTimerI(uint32_t Delay_ms) { chVTSetI(&ITmr, TIME_MS2I(Delay_ms), ITotalFillTmrCallback, this); }
     void StartTimer() {
         chSysLock();
         StartTimerI();
         chSysUnlock();
     }
-    enum {tfstIdle, tfstFadeInAndWait, tfstWaitAndFadeOut, tfstFadeInAndStop, tfstFadeOut} State = tfstIdle;
+    void StartTimer(uint32_t Delay_ms) {
+        chSysLock();
+        StartTimerI(Delay_ms);
+        chSysUnlock();
+    }
+    uint32_t SmoothVar;
+    enum {tfstIdle, tfstFadeInAndWait, tfstWaitAndFadeOut, tfstFadeInAndHold, tfstFadeOut, tfstHold} State = tfstIdle;
     Color_t Clr;
 public:
+    void StartFlaming() {
+        Printf("%S\r", __FUNCTION__);
+        State = tfstFadeOut;
+        SmoothVar = 1800;
+        StartTimer();
+    }
+
     void DoFlash() {
-        State = tfstFadeInAndWait;
-        Brt = 0;
+        Printf("%S\r", __FUNCTION__);
+        State = tfstWaitAndFadeOut;
+        Brt = 255;
         Clr = clRed;
+        SmoothVar = 360;
+        StartTimer(2007);
+    }
+
+    void BeWhite() {
+        Printf("%S\r", __FUNCTION__);
+        State = tfstFadeInAndHold;
+        Brt = 0;
+        Clr = clGreen;
+        SmoothVar = 1800;
         StartTimer();
     }
 
     void Draw() {
         if(State == tfstIdle) return;
-        Clr.Brt = Brt;
         Leds.MixAllwWeight(Clr, Brt);
     }
 
     void OnTickI() {
         switch(State) {
-            case tfstIdle: return; break;
+            case tfstIdle:
+            case tfstHold:
+                return; break;
 
             case tfstFadeInAndWait:
                 if(Brt >= 255) {
@@ -119,8 +143,8 @@ public:
                 }
                 break;
 
-            case tfstFadeInAndStop:
-                if(Brt >= 255) State = tfstIdle;
+            case tfstFadeInAndHold:
+                if(Brt >= 255) State = tfstHold;
                 else {
                     Brt++;
                     StartTimerI();
@@ -157,6 +181,7 @@ static void NpxThread(void *arg) {
     chRegSetThreadName("Npx");
     while(true) {
         chThdSleepMilliseconds(9);
+//        uint32_t Start = chVTGetSystemTimeX();
         Leds.SetAll(Color_t{27, 27, 0}); // Reset colors
         // Draw Foot Ring
         for(int i=0; i<BAND_CNT; i++) {
@@ -173,6 +198,8 @@ static void NpxThread(void *arg) {
 
         // Show it
         Leds.SetCurrentColors();
+
+//        Printf("%u\r", TIME_I2MS(chVTTimeElapsedSinceX(Start)));
     }
 }
 
@@ -186,11 +213,15 @@ void EnterOff() {
 }
 
 void StartFlaming() {
-    State = staFire;
+    TotalFill.StartFlaming();
 }
 
 void DoFlash() {
     TotalFill.DoFlash();
+}
+
+void BeWhite() {
+    TotalFill.BeWhite();
 }
 
 
